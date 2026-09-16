@@ -8041,6 +8041,11 @@ bool Spell::UpdatePointers()
     else
         m_CastItem = nullptr;
 
+    // m_weaponItem is taken when the cast starts. A delayed spell can hit after that weapon was unequipped or
+    // destroyed (bots change gear on their own), and the weapon skill update would then read a freed item.
+    if (m_weaponItem)
+        m_weaponItem = m_caster->IsPlayer() ? m_caster->ToPlayer()->GetWeaponForAttack(m_attackType, true) : nullptr;
+
     m_targets.Update(m_caster);
 
     // further actions done only for dest targets
