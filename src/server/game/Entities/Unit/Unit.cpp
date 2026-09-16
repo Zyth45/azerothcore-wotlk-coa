@@ -13139,7 +13139,18 @@ void Unit::RemoveFromWorld()
         if (GetCharmerGUID())
         {
             LOG_FATAL("entities.unit", "Unit {} has charmer guid when removed from world", GetEntry());
-            ABORT();
+            // Conquest of Azeroth: the Tinker Destructo-Bot (50300) is charmed without a charm
+            // aura, so RemoveCharmAuras leaves it charmed when its summon time runs out. Release
+            // it by hand instead of stopping the whole server.
+            LOG_ERROR("entities.unit", "Unit::RemoveFromWorld - forcing the release of {} from charmer {}",
+                      GetGUID().ToString(), GetCharmerGUID().ToString());
+            RemoveCharmedBy(nullptr);
+            if (GetCharmerGUID())
+            {
+                if (Unit* charmer = GetCharmer())
+                    charmer->SetCharm(this, false);
+                SetGuidValue(UNIT_FIELD_CHARMEDBY, ObjectGuid::Empty);
+            }
         }
 
         if (Unit* owner = GetOwner())
