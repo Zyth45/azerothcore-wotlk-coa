@@ -8577,7 +8577,8 @@ void Unit::RemoveAllControlled(bool onDeath /*= false*/)
                     if (ts->m_Properties && ts->m_Properties->Type == SUMMON_TYPE_LIGHTWELL)
                         continue;
 
-            if (!(onDeath && !IsPlayer() && target->IsGuardian()))
+            // A dying creature keeps its guardians, but not its pet, which leaves with its master.
+            if (!(onDeath && !IsPlayer() && target->IsGuardian() && !static_cast<Minion*>(target)->IsGuardianPet()))
                 target->ToTempSummon()->UnSummon();
         }
         else
@@ -13145,7 +13146,18 @@ void Unit::RemoveFromWorld()
         if (GetCharmerGUID())
         {
             LOG_FATAL("entities.unit", "Unit {} has charmer guid when removed from world", GetEntry());
-            ABORT();
+            // Conquest of Azeroth: the Tinker Destructo-Bot (50300) is charmed without a charm
+            // aura, so RemoveCharmAuras leaves it charmed when its summon time runs out. Release
+            // it by hand instead of stopping the whole server.
+            LOG_ERROR("entities.unit", "Unit::RemoveFromWorld - forcing the release of {} from charmer {}",
+                      GetGUID().ToString(), GetCharmerGUID().ToString());
+            RemoveCharmedBy(nullptr);
+            if (GetCharmerGUID())
+            {
+                if (Unit* charmer = GetCharmer())
+                    charmer->SetCharm(this, false);
+                SetGuidValue(UNIT_FIELD_CHARMEDBY, ObjectGuid::Empty);
+            }
         }
 
         if (Unit* owner = GetOwner())
@@ -13175,9 +13187,8 @@ void Unit::CleanupBeforeRemoveFromMap(bool finalCleanup)
     if (IsInWorld()) // not in world and not being removed atm
         RemoveFromWorld();
 
-    // Added for mod_playerbots crash fixes; cancel and remove pending events before aura/spellmod cleanup.
-    // Without this SpellEvent may be cancelled later during EventProcessor destruction after auras/spellmods
-    // are already removed and leading to invalid access in Player::RestoreSpellMods on logout.
+    // Abort pending events here: left to ~EventProcessor they run after m_spellMods is already
+    // destroyed, and cancelling a SpellEvent then hits freed memory in Player::RestoreSpellMods.
     m_Events.KillAllEvents(false);
 
     ASSERT(GetGUID());
@@ -13352,7 +13363,19 @@ void Unit::ProcSkillsAndReactives(bool isVictim, Unit* target, uint32 procFlag, 
             // On melee based hit/miss/resist/parry/dodge need to update skill (for victim and attacker)
             if (procExtra & (PROC_EX_NORMAL_HIT | PROC_EX_MISS | PROC_EX_RESIST | PROC_EX_PARRY | PROC_EX_DODGE))
             {
-                ToPlayer()->UpdateCombatSkills(target, attType, isVictim, procSpell ? procSpell->m_weaponItem : nullptr);
+                // The spell took its weapon pointer when the cast was checked. An effect of the spell (or of the
+                // spell that triggered it) can destroy or swap that weapon before the hit, so only pass an item
+                // that is still equipped: compare addresses, never read the item itself.
+                Item* weapon = procSpell ? procSpell->m_weaponItem : nullptr;
+                if (weapon)
+                {
+                    Player const* player = ToPlayer();
+                    if (weapon != player->GetWeaponForAttack(BASE_ATTACK, true) &&
+                        weapon != player->GetWeaponForAttack(OFF_ATTACK, true) &&
+                        weapon != player->GetWeaponForAttack(RANGED_ATTACK, true))
+                        weapon = nullptr;
+                }
+                ToPlayer()->UpdateCombatSkills(target, attType, isVictim, weapon);
             }
             // Update defence if player is victim and we block - TODO: confirm that blocked attacks only have a chance to increase defence skill
             else if (isVictim && procExtra & (PROC_EX_BLOCK))

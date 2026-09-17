@@ -1246,6 +1246,10 @@ public:
       return true;
     }
 
+    // Like Player::ActivateSpec, dismiss the pet summoned under the old specialization.
+    if (Pet* pet = player->GetPet())
+      player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
+
     std::unordered_set<uint32> visitedSpellIds;
     uint32 removed = 0;
     for (AscensionCompatData::CoATalentEntry const &entry :
@@ -4586,17 +4590,25 @@ public:
 };
 
 class AscensionCompatPlayerScript : public PlayerScript {
+    // One script instance serves every player, and players on different maps update on
+    // different map threads: every access to the pending list goes through this lock.
+    std::mutex _pendingEquipmentLock;
     std::unordered_map<ObjectGuid, std::vector<ObjectGuid>> _pendingEquipment;
 
     void EquipNewItems(Player* player)
     {
-        auto itr = _pendingEquipment.find(player->GetGUID());
-        if (itr == _pendingEquipment.end())
-            return;
+        std::vector<ObjectGuid> items;
+        {
+            std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
+            auto itr = _pendingEquipment.find(player->GetGUID());
+            if (itr == _pendingEquipment.end())
+                return;
 
-        // Finish the acquisition before moving items; its caller still uses the original bag positions.
-        auto items = std::move(itr->second);
-        _pendingEquipment.erase(itr);
+            // Finish the acquisition before moving items; its caller still uses the original bag positions.
+            items = std::move(itr->second);
+            _pendingEquipment.erase(itr);
+        }
+
         for (ObjectGuid guid : items)
         {
             Item* item = player->GetItemByGuid(guid);
@@ -4697,17 +4709,32 @@ public:
       // SynchronizeTaughtAbilities grants Dual Wield (674) from OnPlayerLogin, which runs only
       // after inventory is already loaded, so CanDualWield() is still false here even when the
       // player legitimately dual-wielded last session; the saved offhand item would otherwise
-      // fail EQUIP_ERR_CANT_DUAL_WIELD and get mailed back on every login. Only paper over that
-      // one not-yet-synced reason: SynchronizeTaughtAbilities's own AutoUnequipOffhandIfNeed()
-      // unequips it again moments later in the same login if the player is no longer eligible.
+      // be rejected and get mailed back on every login. Only paper over that one not-yet-synced
+      // flag: SynchronizeTaughtAbilities's own AutoUnequipOffhandIfNeed() unequips it again
+      // moments later in the same login if the player is no longer eligible.
       uint8 result = player->CanEquipItem(slot, dest, item, false, false);
-      if (result != EQUIP_ERR_CANT_DUAL_WIELD)
+      if (result == EQUIP_ERR_OK || player->CanDualWield())
       {
           err = result;
           return false;
       }
 
-      dest = (INVENTORY_SLOT_BAG_0 << 8) | slot;
+      // A one-hand weapon is refused before the dual wield check (EQUIP_ERR_ITEM_CANT_BE_EQUIPPED:
+      // FindEquipSlot offers the offhand only with dual wield), an offhand weapon at it
+      // (EQUIP_ERR_CANT_DUAL_WIELD). Re-check with the flag the login sync is about to restore.
+      player->SetCanDualWield(true);
+      uint16 dualWieldDest = 0;
+      uint8 const dualWieldResult = player->CanEquipItem(slot, dualWieldDest, item, false, false);
+      if (dualWieldResult != EQUIP_ERR_OK)
+      {
+          player->SetCanDualWield(false);
+          err = result;
+          return false;
+      }
+
+      // Keep the flag: the zone update that adds the player to the map also calls
+      // AutoUnequipOffhandIfNeed(), before OnPlayerLogin runs the taught ability sync.
+      dest = dualWieldDest;
       err = EQUIP_ERR_OK;
       return false;
   }
@@ -4813,7 +4840,10 @@ public:
     }
 
   void OnPlayerLogout(Player *player) override {
-    _pendingEquipment.erase(player->GetGUID());
+    {
+      std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
+      _pendingEquipment.erase(player->GetGUID());
+    }
     AscensionClassService::Instance().OnPlayerLogout(player);
     AscensionResourceService::Instance().OnPlayerLogout(player);
     AscensionCollectionService::Instance().OnPlayerLogout(player);
@@ -4845,7 +4875,10 @@ public:
     if (item && player->IsInWorld() && player->getClass() >= CLASS_BARBARIAN &&
         player->getClass() <= CLASS_SPIRIT_MAGE &&
         ascensionCompatConfig.GetConfigValue<bool>(AscensionCompatConfig::ENABLED))
+    {
+        std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
         _pendingEquipment[player->GetGUID()].push_back(item->GetGUID());
+    }
   }
 
   void OnPlayerCreateItem(Player *player, Item *item,
