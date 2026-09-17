@@ -865,8 +865,11 @@ public:
       return;
 
     uint32 const guid = player->GetGUID().GetCounter();
-    if (!_proficiencySynchronizations.insert(guid).second)
-      return;
+    {
+      std::lock_guard<std::mutex> lock(_stateLock);
+      if (!_proficiencySynchronizations.insert(guid).second)
+        return;
+    }
 
     auto isAllowed = [player](uint32 proficiencySpellId) {
       bool const isObserved = std::any_of(
@@ -942,7 +945,10 @@ public:
           player->UpdateDefenseBonusesMod();
       }
 
-    _proficiencySynchronizations.erase(guid);
+    {
+      std::lock_guard<std::mutex> lock(_stateLock);
+      _proficiencySynchronizations.erase(guid);
+    }
     if (learned || removed)
     {
       LOG_INFO("module.ascension_compat",
@@ -1220,7 +1226,10 @@ public:
 
     uint32 const specializationId = player->GetPlayerSetting(ASCENSION_ACTIVE_SPEC_SETTING, 0).value;
     if (specializationId)
+    {
+        std::lock_guard<std::mutex> lock(_stateLock);
         _activeSpecializations[player->GetGUID().GetCounter()] = specializationId;
+    }
 
     SynchronizeProgression(player);
     SynchronizeProficiencies(player);
@@ -1241,6 +1250,7 @@ public:
   }
 
   uint32 GetActiveSpecialization(Player const *player) const {
+    std::lock_guard<std::mutex> lock(_stateLock);
     auto itr = _activeSpecializations.find(player->GetGUID().GetCounter());
     return itr == _activeSpecializations.end() ? 0 : itr->second;
   }
@@ -1263,8 +1273,10 @@ public:
     uint32 const previousSpecialization = GetActiveSpecialization(player);
     if (!previousSpecialization || previousSpecialization == specializationId)
     {
-      _activeSpecializations[player->GetGUID().GetCounter()] =
-          specializationId;
+      {
+        std::lock_guard<std::mutex> lock(_stateLock);
+        _activeSpecializations[player->GetGUID().GetCounter()] = specializationId;
+      }
       player->UpdatePlayerSetting(ASCENSION_ACTIVE_SPEC_SETTING, 0, specializationId);
 
       uint32 granted = SynchronizeProgression(player);
@@ -1297,8 +1309,10 @@ public:
       }
     }
 
-    _activeSpecializations[player->GetGUID().GetCounter()] =
-        specializationId;
+    {
+      std::lock_guard<std::mutex> lock(_stateLock);
+      _activeSpecializations[player->GetGUID().GetCounter()] = specializationId;
+    }
     player->UpdatePlayerSetting(ASCENSION_ACTIVE_SPEC_SETTING, 0, specializationId);
 
     uint32 granted = SynchronizeProgression(player);
@@ -1321,18 +1335,22 @@ public:
         if (!IsAscensionCustomClass(player))
             return;
 
-        uint32& remaining = _tuningUpdates[player->GetGUID()];
-        if (diff < remaining)
         {
-            remaining -= diff;
-            return;
-        }
+            std::lock_guard<std::mutex> lock(_stateLock);
+            uint32& remaining = _tuningUpdates[player->GetGUID()];
+            if (diff < remaining)
+            {
+                remaining -= diff;
+                return;
+            }
 
-        remaining = 1000;
+            remaining = 1000;
+        }
         AscensionClassTuning::Synchronize(player, GetActiveSpecialization(player), false);
     }
 
   void OnPlayerLogout(Player *player) {
+    std::lock_guard<std::mutex> lock(_stateLock);
     _tuningUpdates.erase(player->GetGUID());
     _activeSpecializations.erase(player->GetGUID().GetCounter());
     _proficiencySynchronizations.erase(player->GetGUID().GetCounter());
@@ -1457,6 +1475,10 @@ private:
         return learned;
     }
 
+  // One service for every player, and player updates run on several map threads at once: every
+  // access to the three containers below goes through this lock. Without it a concurrent insert
+  // corrupts the hash table and a later lookup loops forever, which stops the whole world.
+  mutable std::mutex _stateLock;
   std::unordered_map<ObjectGuid, uint32> _tuningUpdates;
   std::unordered_map<uint32, uint32> _activeSpecializations;
   std::unordered_set<uint32> _proficiencySynchronizations;
