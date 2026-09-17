@@ -4585,17 +4585,25 @@ public:
 };
 
 class AscensionCompatPlayerScript : public PlayerScript {
+    // One script instance serves every player, and players on different maps update on
+    // different map threads: every access to the pending list goes through this lock.
+    std::mutex _pendingEquipmentLock;
     std::unordered_map<ObjectGuid, std::vector<ObjectGuid>> _pendingEquipment;
 
     void EquipNewItems(Player* player)
     {
-        auto itr = _pendingEquipment.find(player->GetGUID());
-        if (itr == _pendingEquipment.end())
-            return;
+        std::vector<ObjectGuid> items;
+        {
+            std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
+            auto itr = _pendingEquipment.find(player->GetGUID());
+            if (itr == _pendingEquipment.end())
+                return;
 
-        // Finish the acquisition before moving items; its caller still uses the original bag positions.
-        auto items = std::move(itr->second);
-        _pendingEquipment.erase(itr);
+            // Finish the acquisition before moving items; its caller still uses the original bag positions.
+            items = std::move(itr->second);
+            _pendingEquipment.erase(itr);
+        }
+
         for (ObjectGuid guid : items)
         {
             Item* item = player->GetItemByGuid(guid);
@@ -4812,7 +4820,10 @@ public:
     }
 
   void OnPlayerLogout(Player *player) override {
-    _pendingEquipment.erase(player->GetGUID());
+    {
+      std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
+      _pendingEquipment.erase(player->GetGUID());
+    }
     AscensionClassService::Instance().OnPlayerLogout(player);
     AscensionResourceService::Instance().OnPlayerLogout(player);
     AscensionCollectionService::Instance().OnPlayerLogout(player);
@@ -4844,7 +4855,10 @@ public:
     if (item && player->IsInWorld() && player->getClass() >= CLASS_BARBARIAN &&
         player->getClass() <= CLASS_SPIRIT_MAGE &&
         ascensionCompatConfig.GetConfigValue<bool>(AscensionCompatConfig::ENABLED))
+    {
+        std::lock_guard<std::mutex> lock(_pendingEquipmentLock);
         _pendingEquipment[player->GetGUID()].push_back(item->GetGUID());
+    }
   }
 
   void OnPlayerCreateItem(Player *player, Item *item,
