@@ -2,6 +2,8 @@
 // Mechanical split of review-CoAChallenges.cpp; no logic changes.
 #include "CoA.Challenges.Review.h"
 
+#include <atomic>
+
 namespace CoAChallenges
 {
 
@@ -646,11 +648,26 @@ namespace CoAChallenges
         CharChallengeCache.erase(guid);
     }
 
+    // CoAChallenges.Enable is read when the configuration loads, not on every call: the combat hooks
+    // reach it on every hit, and each read of a setting the realm's configuration does not define
+    // logs a warning - millions of lines an hour on a realm shipped without mod-coa-challenges.conf.
+    std::atomic<bool> ChallengesEnabledSetting{true};
+
+    void LoadChallengesEnabled()
+    {
+        ChallengesEnabledSetting = sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true);
+    }
+
+    bool ChallengesEnabled()
+    {
+        return ChallengesEnabledSetting.load(std::memory_order_relaxed);
+    }
+
     bool PlayerHasRule(Player* player, char const* rule)
     {
         // The combat hooks read the rules through here, and they are registered whatever the
         // setting says: without this an operator who turns the module off still pays for it.
-        if (!player || !sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+        if (!player || !ChallengesEnabled())
             return false;
         uint32 guid = player->GetGUID().GetCounter();
 
@@ -1375,7 +1392,7 @@ namespace CoAChallenges
     // the member already removed from `group` (nullptr for a disband).
     void FailSharedFateHolders(Group* group, Player* extra)
     {
-        if (!sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+        if (!ChallengesEnabled())
             return;
 
         std::vector<std::pair<Player*, uint32>> targets;
@@ -1423,7 +1440,7 @@ namespace CoAChallenges
 
     void HandlePlayerDeath(Player* player)
     {
-        if (!sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+        if (!ChallengesEnabled())
             return;
         if (!sConfigMgr->GetOption<bool>("CoAChallenges.RespondToDeath", true))
             return;

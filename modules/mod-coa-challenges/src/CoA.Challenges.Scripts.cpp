@@ -925,7 +925,7 @@ namespace CoAChallenges
         // permadeath challenge (Player::ResurrectPlayer early-returns on false).
         bool OnPlayerCanResurrect(Player* player) override
         {
-            if (!sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+            if (!ChallengesEnabled())
                 return true;
             return !HasPermaDeathFailure(player);
         }
@@ -1027,7 +1027,7 @@ namespace CoAChallenges
         // lava/fire contact.
         bool OnPlayerEnvironmentalDamage(Player* player, uint32 type, uint32 damage) override
         {
-            if (!player || !sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+            if (!player || !ChallengesEnabled())
                 return true;
 
             // Only a lethal hit names the death; a non-lethal scratch must not
@@ -1841,7 +1841,13 @@ namespace CoAChallenges
     class CoAChallengesWorld : public WorldScript
     {
     public:
-        CoAChallengesWorld() : WorldScript("CoAChallengesWorld", { WORLDHOOK_ON_UPDATE, WORLDHOOK_ON_STARTUP }) { }
+        CoAChallengesWorld() : WorldScript("CoAChallengesWorld",
+            { WORLDHOOK_ON_UPDATE, WORLDHOOK_ON_STARTUP, WORLDHOOK_ON_AFTER_CONFIG_LOAD }) { }
+
+        void OnAfterConfigLoad(bool /*reload*/) override
+        {
+            LoadChallengesEnabled();
+        }
 
         void OnStartup() override
         {
@@ -1974,7 +1980,7 @@ namespace CoAChallenges
                 Player* player = session ? session->GetPlayer() : nullptr;
                 std::string who = player ? player->GetName() : "<none>";
 
-                if (!sConfigMgr->GetOption<bool>("CoAChallenges.Enable", true))
+                if (!ChallengesEnabled())
                     return true;
 
                 // Debug level, and no full hex dump: this branch is reached for

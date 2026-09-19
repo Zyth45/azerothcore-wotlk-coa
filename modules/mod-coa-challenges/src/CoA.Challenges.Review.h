@@ -480,6 +480,8 @@ uint32 ActivateChallenge(Player* player, uint32 challengeID, uint32 level);
 void DeactivateChallenge(Player* player, uint32 challengeID);
 bool RuleListContains(std::string const& list, std::string const& rule);
 bool PlayerHasRule(Player* player, char const* rule);
+void LoadChallengesEnabled();
+bool ChallengesEnabled();
 uint32 ActiveChallengeWithRule(Player* player, char const* rule, uint32& level);
 std::set<uint32> ActiveChallenges(uint32 guid);
 void SetConditionFlag(uint32 guid, char const* flag);
