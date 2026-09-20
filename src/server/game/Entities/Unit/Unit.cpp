@@ -462,6 +462,12 @@ Unit::Unit() : WorldObject(),
 // Methods of class Unit
 Unit::~Unit()
 {
+    // Whatever still follows this unit holds a raw pointer to it and will touch that pointer from its
+    // own destructor, through AbstractFollower::SetTarget. RemoveFromWorld() detaches them, but nothing
+    // guarantees it ran: a unit destroyed by another path, or while a follower of its own is being
+    // destroyed on another map thread, leaves them pointing at memory that is about to be freed.
+    RemoveAllFollowers();
+
     // set current spells as deletable
     for (uint8 i = 0; i < CURRENT_MAX_SPELL; ++i)
         if (m_currentSpells[i])
