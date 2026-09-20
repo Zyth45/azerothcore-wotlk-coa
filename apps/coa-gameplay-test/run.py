@@ -147,8 +147,8 @@ def validate(scenario):
     actor_ids = set()
     for player in players:
         keys(player, {'id', 'race', 'class'},
-             {'id', 'race', 'class', 'level', 'spell_hit_rating', 'spell_crit_rating', 'ranged_hit_rating',
-              'melee_hit_rating', 'expertise_rating'}, 'player')
+             {'id', 'race', 'class', 'level', 'bot', 'spell_hit_rating', 'spell_crit_rating',
+              'ranged_hit_rating', 'melee_hit_rating', 'expertise_rating'}, 'player')
         identity = player['id']
         require(isinstance(identity, str) and ACTOR_ID.fullmatch(identity), 'Invalid player id')
         require(identity not in actor_ids, 'Duplicate actor id')
@@ -157,6 +157,7 @@ def validate(scenario):
         for key in ('race', 'class'):
             number(player[key], key, 1, 255, True)
         number(player.get('level', 80), 'level', 1, 255, True)
+        require(type(player.get('bot', False)) is bool, 'bot must be boolean')
         number(player.get('spell_hit_rating', 0), 'spell_hit_rating', 0, 100000, True)
         number(player.get('spell_crit_rating', 0), 'spell_crit_rating', 0, 100000, True)
         number(player.get('ranged_hit_rating', 0), 'ranged_hit_rating', 0, 100000, True)

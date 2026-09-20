@@ -278,8 +278,11 @@ private:
             uint32 accountId = AccountMgr::GetId(actor.account);
             if (!accountId)
                 return;
+            // "bot": true marks the session the way playerbots marks its own, so a scenario can
+            // check what the server does differently for a bot.
             actor.session = std::make_unique<WorldSession>(accountId, std::string(actor.account), 0, nullptr,
-                SEC_PLAYER, EXPANSION_WRATH_OF_THE_LICH_KING, 0, LOCALE_enUS, 0, false, false, 0);
+                SEC_PLAYER, EXPANSION_WRATH_OF_THE_LICH_KING, 0, LOCALE_enUS, 0, false, false, 0,
+                actor.definition.get<bool>("bot", false));
             actor.session->SetSocketlessPacketObserver([&actor](WorldPacket const& packet)
             {
                 if (packet.GetOpcode() == SMSG_ATTACKERSTATEUPDATE)
