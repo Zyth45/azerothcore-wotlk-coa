@@ -613,9 +613,13 @@ public:
       LOG_INFO("coa", "Reconciled {} proven class grants for {} against live level {}",
           removed, player->GetName(), uint32(player->GetLevel()));
     uint32 learned = 0;
+    // A bot (mod-playerbots) never buys a Book of Ascension: with automatic progression off it would
+    // level up without learning the class abilities of its new level (Witch Doctors of level 40
+    // were found without Reclaim Soul, their level 10 resurrection). Bots always progress.
     bool const automaticProgression =
         explicitRequest || ascensionCompatConfig.GetConfigValue<bool>(
-                               AscensionCompatConfig::AUTO_PROGRESSION);
+                               AscensionCompatConfig::AUTO_PROGRESSION) ||
+        (player->GetSession() && player->GetSession()->IsBot());
     for (uint32 spellId : racialSpells)
         if (automaticProgression && !player->HasSpell(spellId) && sSpellMgr->GetSpellInfo(spellId))
         {
