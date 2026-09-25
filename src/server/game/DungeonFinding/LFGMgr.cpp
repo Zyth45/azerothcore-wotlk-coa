@@ -261,6 +261,7 @@ namespace lfg
         uint32 oldMSTime = getMSTime();
 
         LfgDungeonStore.clear();
+        DungeonsWithoutEntrance.clear();
 
         // Initialize Dungeon map with data from dbcs
         for (uint32 i = 0; i < sLFGDungeonStore.GetNumRows(); ++i)
@@ -328,6 +329,7 @@ namespace lfg
                 if (!at)
                 {
                     LOG_ERROR("lfg", "LFGMgr::LoadLFGDungeons: Failed to load dungeon {}, cant find areatrigger for map {}", dungeon.name, dungeon.map);
+                    DungeonsWithoutEntrance.insert(dungeon.id);
                     continue;
                 }
 
@@ -498,7 +500,7 @@ namespace lfg
                 lockData = LFG_LOCKSTATUS_RAID_LOCKED;
             else if (dungeon->expansion > expansion || (onlySeasonalBosses && !dungeon->seasonal))
                 lockData = LFG_LOCKSTATUS_INSUFFICIENT_EXPANSION;
-            else if (IsDungeonDisabled(dungeon->map, dungeon->difficulty))
+            else if (IsDungeonDisabled(dungeon->map, dungeon->difficulty) || DungeonsWithoutEntrance.count(dungeon->id))
                 lockData = LFG_LOCKSTATUS_RAID_LOCKED;
             else if (dungeon->difficulty > DUNGEON_DIFFICULTY_NORMAL && (!mapEntry || !mapEntry->IsRaid()) && sInstanceSaveMgr->PlayerIsPermBoundToInstance(player->GetGUID(), dungeon->map, Difficulty(dungeon->difficulty)))
                 lockData = LFG_LOCKSTATUS_RAID_LOCKED;
@@ -1585,7 +1587,7 @@ namespace lfg
 
                 uint8 difficultyFlag = (randomDungeonId == RANDOM_DUNGEON_NORMAL_TBC || randomDungeonId == RANDOM_DUNGEON_NORMAL_WOTLK) ? 0 : 1;
 
-                if (dungeon && !IsDungeonDisabled(dungeon->map, (Difficulty)difficultyFlag) && it2->second == LFG_LOCKSTATUS_RAID_LOCKED && randomDungeonId && sWorld->getBoolConfig(CONFIG_LFG_ALLOW_COMPLETED))
+                if (dungeon && !IsDungeonDisabled(dungeon->map, (Difficulty)difficultyFlag) && !DungeonsWithoutEntrance.count(dungeonId) && it2->second == LFG_LOCKSTATUS_RAID_LOCKED && randomDungeonId && sWorld->getBoolConfig(CONFIG_LFG_ALLOW_COMPLETED))
                     continue;
 
                 LfgDungeonSet::iterator itDungeon = dungeons.find(dungeonId);
