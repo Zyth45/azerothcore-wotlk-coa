@@ -478,7 +478,7 @@ namespace lfg
         ObjectGuid guid = player->GetGUID();
 
         uint8 level = player->GetLevel();
-        uint8 expansion = player->GetSession()->Expansion();
+        uint8 expansion = std::min<uint8>(player->GetSession()->Expansion(), sWorld->getIntConfig(CONFIG_LFG_MAX_EXPANSION));
         LfgDungeonSet const& dungeons = GetDungeonsByRandom(0);
         LfgLockMap lock;
 
