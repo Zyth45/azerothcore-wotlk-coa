@@ -3441,7 +3441,9 @@ public:
 
     void PrepareOwnedCompanionsBeforeMap(Player* player)
     {
-        if (!_clientDataLoaded || player->IsInWorld() || !player->GetSession()->PlayerLoading() ||
+        // A bot gets its mount from mod-playerbots (a random racial mount for its level) and has no
+        // use for the account's mount and companion collection: over a thousand spells per bot.
+        if (!_clientDataLoaded || player->GetSession()->IsBot() || player->IsInWorld() || !player->GetSession()->PlayerLoading() ||
             !ascensionCompatConfig.GetConfigValue<bool>(AscensionCompatConfig::LEARN_OWNED_COMPANIONS))
             return;
 
