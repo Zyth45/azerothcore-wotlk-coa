@@ -3271,6 +3271,16 @@ public:
       return;
     }
 
+    // A bot (mod-playerbots) has no client: it never opens the wardrobe or the vanity collection.
+    // Building its collection state would unlock the whole local catalog (~43k appearances) into a
+    // per-character set, send the snapshot packets, then stream the rest on every update, for
+    // nothing. Every reader of this state already handles its absence. Riding is still granted.
+    if (player->GetSession()->IsBot())
+    {
+      InitializeRiding(player);
+      return;
+    }
+
     std::shared_ptr<PlayerCollectionState> state =
         std::make_shared<PlayerCollectionState>();
     state->AccountId = player->GetSession()->GetAccountId();
