@@ -281,6 +281,12 @@ namespace lfg
             }
         }
 
+        uint32 const maxExpansion = sWorld->getIntConfig(CONFIG_LFG_MAX_EXPANSION);
+        if (maxExpansion < EXPANSION_WRATH_OF_THE_LICH_KING)
+            for (auto& [id, dungeon] : LfgDungeonStore)
+                if (dungeon.type == LFG_TYPE_RANDOM && dungeon.expansion == maxExpansion && dungeon.difficulty == DUNGEON_DIFFICULTY_NORMAL)
+                    dungeon.maxlevel = std::max<uint8>(dungeon.maxlevel, sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+
         // Fill teleport locations from DB
         //                                                   0          1           2           3            4
         QueryResult result = WorldDatabase.Query("SELECT dungeonId, position_x, position_y, position_z, orientation FROM lfg_dungeon_template");
@@ -1575,6 +1581,13 @@ namespace lfg
     void LFGMgr::GetCompatibleDungeons(LfgDungeonSet& dungeons, LfgGuidSet const& players, LfgLockPartyMap& lockMap, uint32 randomDungeonId)
     {
         lockMap.clear();
+        for (LfgDungeonSet::iterator itr = dungeons.begin(); itr != dungeons.end();)
+        {
+            if (DungeonsWithoutEntrance.count(*itr))
+                itr = dungeons.erase(itr);
+            else
+                ++itr;
+        }
         for (LfgGuidSet::const_iterator it = players.begin(); it != players.end() && !dungeons.empty(); ++it)
         {
             ObjectGuid guid = (*it);
