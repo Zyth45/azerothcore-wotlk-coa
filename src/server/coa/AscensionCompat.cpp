@@ -3271,10 +3271,6 @@ public:
       return;
     }
 
-    // A bot (mod-playerbots) has no client: it never opens the wardrobe or the vanity collection.
-    // Building its collection state would unlock the whole local catalog (~43k appearances) into a
-    // per-character set, send the snapshot packets, then stream the rest on every update, for
-    // nothing. Every reader of this state already handles its absence. Riding is still granted.
     if (player->GetSession()->IsBot())
     {
       InitializeRiding(player);
@@ -3441,8 +3437,6 @@ public:
 
     void PrepareOwnedCompanionsBeforeMap(Player* player)
     {
-        // A bot gets its mount from mod-playerbots (a random racial mount for its level) and has no
-        // use for the account's mount and companion collection: over a thousand spells per bot.
         if (!_clientDataLoaded || player->GetSession()->IsBot() || player->IsInWorld() || !player->GetSession()->PlayerLoading() ||
             !ascensionCompatConfig.GetConfigValue<bool>(AscensionCompatConfig::LEARN_OWNED_COMPANIONS))
             return;
