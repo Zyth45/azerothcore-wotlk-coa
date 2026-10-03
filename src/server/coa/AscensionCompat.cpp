@@ -4080,12 +4080,23 @@ public:
         AscensionCompatConfig::COLLECTIONS_FOR_BOTS);
     if (mode != 1)
       return mode >= 2;
+    uint32 const accountId = player->GetSession()->GetAccountId();
+    static std::mutex cacheMutex;
+    static std::unordered_map<uint32, bool> playerAccounts;
+    {
+      std::lock_guard lock(cacheMutex);
+      if (auto const found = playerAccounts.find(accountId); found != playerAccounts.end())
+        return found->second;
+    }
     std::string const prefix = ascensionCompatConfig.GetConfigValue<std::string>(
         AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX);
     std::string account;
-    if (!AccountMgr::GetName(player->GetSession()->GetAccountId(), account))
+    if (!AccountMgr::GetName(accountId, account))
       return false;
-    return prefix.empty() || !StringStartsWithI(account, prefix);
+    bool const playerAccount = prefix.empty() || !StringStartsWithI(account, prefix);
+    std::lock_guard lock(cacheMutex);
+    playerAccounts[accountId] = playerAccount;
+    return playerAccount;
   }
 
   void OnPlayerLogin(Player *player) {
