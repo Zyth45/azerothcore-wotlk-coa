@@ -4081,21 +4081,28 @@ public:
     if (mode != 1)
       return mode >= 2;
     uint32 const accountId = player->GetSession()->GetAccountId();
+    std::string const prefix = ascensionCompatConfig.GetConfigValue<std::string>(
+        AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX);
     static std::mutex cacheMutex;
+    static std::string cachedPrefix;
     static std::unordered_map<uint32, bool> playerAccounts;
     {
       std::lock_guard lock(cacheMutex);
+      if (cachedPrefix != prefix)
+      {
+        playerAccounts.clear();
+        cachedPrefix = prefix;
+      }
       if (auto const found = playerAccounts.find(accountId); found != playerAccounts.end())
         return found->second;
     }
-    std::string const prefix = ascensionCompatConfig.GetConfigValue<std::string>(
-        AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX);
     std::string account;
     if (!AccountMgr::GetName(accountId, account))
       return false;
     bool const playerAccount = prefix.empty() || !StringStartsWithI(account, prefix);
     std::lock_guard lock(cacheMutex);
-    playerAccounts[accountId] = playerAccount;
+    if (cachedPrefix == prefix)
+      playerAccounts[accountId] = playerAccount;
     return playerAccount;
   }
 
