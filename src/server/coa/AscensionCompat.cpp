@@ -4,6 +4,7 @@
  * https://github.com/azerothcore/azerothcore-wotlk/blob/master/LICENSE-AGPL3
  */
 
+#include "AccountMgr.h"
 #include "AscensionFelsworn.h"
 #include "AscensionPyromancer.h"
 #include "AscensionCultist.h"
@@ -403,6 +404,8 @@ enum class AscensionCompatConfig {
   CLIENT_INTEGER_CONFIGS,
   SEND_DISPLAY_PATCHES,
   CLIENT_DBC_DIRECTORY,
+  COLLECTIONS_FOR_BOTS,
+  RANDOM_BOT_ACCOUNT_PREFIX,
 
   NUM_CONFIGS,
 };
@@ -447,6 +450,10 @@ public:
                          "CoA.MaxRidingFromStart", true);
     SetConfigValue<bool>(AscensionCompatConfig::QUEST_LEVEL_SCALING,
                          "CoA.QuestLevelScaling", true);
+    SetConfigValue<uint32>(AscensionCompatConfig::COLLECTIONS_FOR_BOTS,
+                           "CoA.CollectionsForBots", 0);
+    SetConfigValue<std::string>(AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX,
+                                "CoA.RandomBotAccountPrefix", "rndbot");
     SetConfigValue<bool>(AscensionCompatConfig::AUTO_PROGRESSION,
                          "CoA.AutoProgression", false);
     SetConfigValue<bool>(AscensionCompatConfig::SEND_DISPLAY_PATCHES,
@@ -4068,6 +4075,19 @@ public:
           packet.GetOpcode(), packet.size(), accountId, reason, rejected);
   }
 
+  static bool LoadsCollectionsForBot(Player *player) {
+    uint32 const mode = ascensionCompatConfig.GetConfigValue<uint32>(
+        AscensionCompatConfig::COLLECTIONS_FOR_BOTS);
+    if (mode != 1)
+      return mode >= 2;
+    std::string const prefix = ascensionCompatConfig.GetConfigValue<std::string>(
+        AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX);
+    std::string account;
+    if (!AccountMgr::GetName(player->GetSession()->GetAccountId(), account))
+      return false;
+    return prefix.empty() || !StringStartsWithI(account, prefix);
+  }
+
   void OnPlayerLogin(Player *player) {
     if (!_clientDataLoaded)
     {
@@ -4077,7 +4097,7 @@ public:
       return;
     }
 
-    if (player->GetSession()->IsBot())
+    if (player->GetSession()->IsBot() && !LoadsCollectionsForBot(player))
     {
       TakeLoginState(player);
       InitializeRiding(player);
