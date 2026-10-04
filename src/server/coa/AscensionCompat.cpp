@@ -553,6 +553,10 @@ bool IsAscensionCustomClass(Player const *player) {
   return playerClass >= CLASS_BARBARIAN && playerClass <= CLASS_SPIRIT_MAGE;
 }
 
+bool ReceivesClientRequests(Player const *player) {
+  return !player->GetSession()->IsBot();
+}
+
 enum LegacyQuestSpells : uint32
 {
     QuestStoneskinTotem = 8073,
@@ -1908,6 +1912,9 @@ public:
 
   void ProcessTalentRequests(Player* player)
   {
+    if (!ReceivesClientRequests(player))
+      return;
+
     std::deque<TalentRequest> requests;
     {
       std::lock_guard<std::mutex> lock(_stateLock);
@@ -2386,7 +2393,8 @@ public:
     _proficiencySynchronizations.erase(player->GetGUID().GetCounter());
     _advancementPending.erase(player->GetGUID().GetCounter());
     _advancementSent.erase(player->GetGUID().GetCounter());
-    _pendingTalentRequests.erase(player->GetSession()->GetAccountId());
+    if (ReceivesClientRequests(player))
+      _pendingTalentRequests.erase(player->GetSession()->GetAccountId());
   }
 
     static uint32 GetSelectableFreeGroup(uint32 entryId)
@@ -4170,6 +4178,9 @@ public:
       _loginStates.erase(player->GetGUID().GetCounter());
     }
 
+    if (!ReceivesClientRequests(player))
+      return;
+
     {
       std::lock_guard lock(_rejectedPacketMutex);
       _rejectedPackets.erase(player->GetSession()->GetAccountId());
@@ -4206,8 +4217,9 @@ public:
   }
 
   void OnPlayerUpdate(Player *player, uint32 diff) {
-    for (WorldPacket &packet : TakeClientPackets(player->GetSession()->GetAccountId()))
-      HandleClientPacket(player, packet);
+    if (ReceivesClientRequests(player))
+      for (WorldPacket &packet : TakeClientPackets(player->GetSession()->GetAccountId()))
+        HandleClientPacket(player, packet);
 
     ProcessPendingAppearanceAdds(player, diff);
     ProcessPendingCompanionSpells(player, diff);
