@@ -139,6 +139,19 @@ void WorldDatabaseConnection::DoPrepareStatements()
         "SELECT ID, SkillLine FROM coa_client_skill_line_ability ORDER BY ID", CONNECTION_SYNCH);
     PrepareStatement(WORLD_SEL_COA_DUNGEON_LOOT_VARIANT, "SELECT base_item, heroic_item, mythic_item FROM coa_dungeon_loot_variant", CONNECTION_SYNCH);
     PrepareStatement(WORLD_SEL_COA_DUNGEON_HEALTH, "SELECT map_id, difficulty, creature_entry, max_health FROM coa_dungeon_health", CONNECTION_SYNCH);
+
+    PrepareStatement(WORLD_SEL_AUCTION_BOT_ITEM_SOURCES,
+        "SELECT Item FROM creature_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM gameobject_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM reference_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM fishing_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM skinning_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM item_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM disenchant_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM prospecting_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM milling_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT Item FROM pickpocketing_loot_template WHERE Reference = 0 AND QuestRequired = 0 "
+        "UNION SELECT item FROM npc_vendor", CONNECTION_SYNCH);
 }
 
 WorldDatabaseConnection::WorldDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
