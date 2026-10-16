@@ -776,12 +776,38 @@ void AuctionHouseBot::PopulateItemCandidatesAndProportions()
             LOG_ERROR("module", "AuctionHouseBot: No CoA item sources loaded; only profession items are eligible");
     }
 
+    // Blizzard items of the later expansions (ids 21000 to 56806) that ask for level 55 or more, or are item level 58
+    // or more, are kept only with a source in the original game's world: their requirements alone let Netherweave
+    // Cloth (level 58, item level 60) and Fel Iron Ore through the level 60 limits.
+    std::unordered_set<uint32> vanillaItems;
+    bool coaVanillaOnly = sConfigMgr->GetOption<bool>("AuctionHouseBot.CoA.VanillaItemsOnly", true);
+    if (coaVanillaOnly)
+    {
+        PreparedQueryResult sources = WorldDatabase.Query(
+            WorldDatabase.GetPreparedStatement(WORLD_SEL_AUCTION_BOT_VANILLA_SOURCES));
+        if (sources)
+            do
+            {
+                vanillaItems.insert(sources->Fetch()[0].Get<uint32>());
+            } while (sources->NextRow());
+        else
+            LOG_ERROR("module", "AuctionHouseBot: No original-world item sources loaded; later expansions' goods are not filtered");
+    }
+    uint32 laterExpansionItems = 0;
+
     // Fill candidate item templates
     ItemTemplateContainer const* its = sObjectMgr->GetItemTemplateStore();
     for (ItemTemplateContainer::const_iterator itr = its->begin(); itr != its->end(); ++itr)
     {
         if (coaSourcesOnly && !obtainableItems.count(itr->second.ItemId))
             continue;
+
+        if (coaVanillaOnly && !vanillaItems.empty() && itr->second.ItemId >= 21000 && itr->second.ItemId <= 56806 &&
+            (itr->second.RequiredLevel >= 55 || itr->second.ItemLevel >= 58) && !vanillaItems.count(itr->second.ItemId))
+        {
+            ++laterExpansionItems;
+            continue;
+        }
 
         // Never store curBlock zero
         if (itr->second.ItemId == 0)
@@ -997,8 +1023,8 @@ void AuctionHouseBot::PopulateItemCandidatesAndProportions()
     for (auto const& classCandidates : ItemCandidatesByItemClassAndQuality)
         for (auto const& qualityCandidates : classCandidates.second)
             candidateCount += qualityCandidates.second.size();
-    LOG_INFO("module", "AuctionHouseBot: {} eligible item templates (CoA source filter: {})",
-        candidateCount, coaSourcesOnly);
+    LOG_INFO("module", "AuctionHouseBot: {} eligible item templates (CoA source filter: {}, {} later expansion items left out)",
+        candidateCount, coaSourcesOnly, laterExpansionItems);
 
     // Show any debugging information
     if (debug_Out)
@@ -1993,7 +2019,7 @@ bool AuctionHouseBot::IsModuleEnabled()
 namespace
 {
     constexpr char const* AutoAccountName = "AHBOT";
-    constexpr char const* AutoCharacterNames[] = { "Auctioneer", "Auctionbot", "Marketkeeper", "Tradewarden" };
+    constexpr char const* AutoCharacterNames[] = { "Gavelgrin", "Auctioneer", "Auctionbot", "Marketkeeper", "Tradewarden" };
 }
 
 bool AuctionHouseBot::UsesAutoCharacter()
