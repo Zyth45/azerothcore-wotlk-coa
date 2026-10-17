@@ -87,7 +87,7 @@
 ###############################################################################
 
 # Master switch; the seller or buyer and an auction character (GUIDs or AutoCharacter) are also required.
-AuctionHouseBot.Enable = false
+AuctionHouseBot.Enable = true
 
 # CoA: only list items found in world loot, vendors or profession crafting.
 # Existing binding, quality, name and level filters still apply.
