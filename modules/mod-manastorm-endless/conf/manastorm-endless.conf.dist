@@ -1,7 +1,7 @@
 [worldserver]
 
 # Enable/disable the Manastorm gameplay module (requires restart).
-Manastorm.Enable = 1
+Manastorm.Enable = 0
 
 # Automatic affixes require this stage creature level and completion of the first native affix unlock depth.
 # Individual progression affixes still require their matching native unlock/toast; those depths are unchanged.
