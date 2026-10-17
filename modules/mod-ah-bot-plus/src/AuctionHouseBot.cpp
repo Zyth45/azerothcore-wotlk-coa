@@ -2001,7 +2001,7 @@ void AuctionHouseBot::Update()
 
 bool AuctionHouseBot::IsModuleEnabled()
 {
-    if (!sConfigMgr->GetOption<bool>("AuctionHouseBot.Enable", true))
+    if (!sConfigMgr->GetOption<bool>("AuctionHouseBot.Enable", false))
         return false;
     bool sellerEnabled = sConfigMgr->GetOption<bool>("AuctionHouseBot.EnableSeller", false);
     bool buyerEnabled = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.Enabled", false);
@@ -2096,7 +2096,7 @@ void AuctionHouseBot::InitializeConfiguration()
     debug_Out = sConfigMgr->GetOption<bool>("AuctionHouseBot.DEBUG", false);
     debug_Out_Filters = sConfigMgr->GetOption<bool>("AuctionHouseBot.DEBUG_FILTERS", false);
 
-    bool enabled = sConfigMgr->GetOption<bool>("AuctionHouseBot.Enable", true);
+    bool enabled = sConfigMgr->GetOption<bool>("AuctionHouseBot.Enable", false);
     SellingBotEnabled = enabled && sConfigMgr->GetOption<bool>("AuctionHouseBot.EnableSeller", false);
     BuyingBotEnabled = enabled && sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.Enabled", false);
 
