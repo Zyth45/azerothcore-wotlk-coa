@@ -507,7 +507,7 @@ public:
     SetConfigValue<bool>(AscensionCompatConfig::QUEST_LEVEL_SCALING,
                          "CoA.QuestLevelScaling", true);
     SetConfigValue<uint32>(AscensionCompatConfig::COLLECTIONS_FOR_BOTS,
-                           "CoA.CollectionsForBots", 0);
+                           "CoA.CollectionsForBots", 1);
     SetConfigValue<std::string>(AscensionCompatConfig::RANDOM_BOT_ACCOUNT_PREFIX,
                                 "CoA.RandomBotAccountPrefix", "rndbot");
     SetConfigValue<bool>(AscensionCompatConfig::AUTO_PROGRESSION,
