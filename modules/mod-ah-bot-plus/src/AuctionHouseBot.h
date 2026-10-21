@@ -153,6 +153,9 @@ private:
     float BuyingBotAcceptablePriceModifier;
     bool BuyingBotAlwaysBidMaxCalculatedPrice;
     bool BuyingBotWillBidAgainstPlayers;
+    bool BuyingBotOnlyBuyListableItems;
+    uint32 BuyingBotMaxPurchasesPerSellerPerDay;
+    std::unordered_map<uint32, std::pair<uint32, uint32>> BuyingBotPurchasesBySellerToday;
     std::vector<uint32> vendorItemsPrices;
     std::string AHCharactersGUIDsForQuery;
     uint32 ItemsPerCycle;
@@ -369,6 +372,7 @@ public:
     void PopulateQuestRewardItemIDs();
     bool IsItemQuestReward(uint32 itemID);
     bool IsItemCrafted(uint32 itemID);
+    bool IsItemListableBySeller(ItemTemplate const* itemProto);
     bool IsItemCategoryQualityInDBDropRatesConfig(ItemTemplate const* proto);
     bool IsItemEligibleForDBDropRates(ItemTemplate const* proto);
     bool HandleAdvancedListingRuleUseDropRates(ItemTemplate const*& proto);

@@ -32,7 +32,9 @@
 #include "SharedDefines.h"
 #include "SRP6.h"
 #include "World.h"
+#include "GameTime.h"
 #include "SpellMgr.h"
+#include <algorithm>
 #include <cmath>
 
 #include <set>
@@ -69,6 +71,8 @@ AuctionHouseBot::AuctionHouseBot() :
     BuyingBotAcceptablePriceModifier(1),
     BuyingBotAlwaysBidMaxCalculatedPrice(false),
     BuyingBotWillBidAgainstPlayers(false),
+    BuyingBotOnlyBuyListableItems(false),
+    BuyingBotMaxPurchasesPerSellerPerDay(0),
     AHCharactersGUIDsForQuery(""),
     ItemsPerCycle(75),
     DisabledItemTextFilter(true),
@@ -1074,6 +1078,24 @@ uint32 AuctionHouseBot::GetRandomItemIDForListing()
     return ItemCandidatesByItemClassAndQuality[listProportionNode.ItemClassID][listProportionNode.ItemQualityID][urand(0, numOfValidItemsInGroup-1)];
 }
 
+bool AuctionHouseBot::IsItemListableBySeller(ItemTemplate const* itemProto)
+{
+    bool hasListProportion = false;
+    for (ListProportionNode const& node : ItemListProportionNodesSeed)
+        if (node.ItemClassID == itemProto->Class && node.ItemQualityID == itemProto->Quality && node.Proportion > 0)
+            hasListProportion = true;
+    if (!hasListProportion)
+        return false;
+
+    auto classItr = ItemCandidatesByItemClassAndQuality.find(itemProto->Class);
+    if (classItr == ItemCandidatesByItemClassAndQuality.end())
+        return false;
+    auto qualityItr = classItr->second.find(itemProto->Quality);
+    if (qualityItr == classItr->second.end())
+        return false;
+    return std::find(qualityItr->second.begin(), qualityItr->second.end(), itemProto->ItemId) != qualityItr->second.end();
+}
+
 void AuctionHouseBot::AddNewAuctions(std::vector<Player*> AHBPlayers, FactionSpecificAuctionHouseConfig *config)
 {
     if (!SellingBotEnabled)
@@ -1714,11 +1736,11 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
         return;
     }
 
-    // Pull currentAuctionItemListCount.
-    string queryString = "SELECT id FROM auctionhouse WHERE itemowner NOT IN ({}) AND buyguid NOT IN ({})";
+    // Pull currentAuctionItemListCount, only from this auction house so no candidate is wasted on another one
+    string queryString = "SELECT id FROM auctionhouse WHERE houseid = {} AND itemowner NOT IN ({}) AND buyguid NOT IN ({})";
     if (BuyingBotWillBidAgainstPlayers == false)
-        queryString = "SELECT id FROM auctionhouse WHERE itemowner NOT IN ({}) AND buyguid NOT IN ({}) AND lastbid = 0";
-    QueryResult result = CharacterDatabase.Query(queryString, AHCharactersGUIDsForQuery, AHCharactersGUIDsForQuery);
+        queryString = "SELECT id FROM auctionhouse WHERE houseid = {} AND itemowner NOT IN ({}) AND buyguid NOT IN ({}) AND lastbid = 0";
+    QueryResult result = CharacterDatabase.Query(queryString, config->GetAHID(), AHCharactersGUIDsForQuery, AHCharactersGUIDsForQuery);
 
     if (!result)
         return;
@@ -1777,6 +1799,29 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
             if (debug_Out)
                 LOG_ERROR("module", "AHBuyer: Item template {} for auction {} does not exist, skipping", auction->item_template, auction->Id);
             continue;
+        }
+
+        // Only buy what the seller bot itself could list, if configured
+        if (BuyingBotOnlyBuyListableItems && !IsItemListableBySeller(prototype))
+        {
+            if (debug_Out)
+                LOG_INFO("module", "AHBuyer: Item {} is not one the seller bot lists, skipping", prototype->ItemId);
+            continue;
+        }
+
+        // Cap the purchases made from a single seller each day, if configured
+        uint32 sellerGUIDLow = auction->owner.GetCounter();
+        uint32 today = uint32(GameTime::GetGameTime().count() / DAY);
+        if (BuyingBotMaxPurchasesPerSellerPerDay > 0)
+        {
+            auto sellerItr = BuyingBotPurchasesBySellerToday.find(sellerGUIDLow);
+            if (sellerItr != BuyingBotPurchasesBySellerToday.end() && sellerItr->second.first == today &&
+                sellerItr->second.second >= BuyingBotMaxPurchasesPerSellerPerDay)
+            {
+                if (debug_Out)
+                    LOG_INFO("module", "AHBuyer: Seller {} reached the daily purchase cap, skipping", sellerGUIDLow);
+                continue;
+            }
         }
 
         // Calculate a potential price for the item
@@ -1863,6 +1908,14 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
             LOG_INFO("module", "AHBuyer: Decided to Bid?: {}", doBid);
             LOG_INFO("module", "AHBuyer: Stopped from buying due to 'PreventOverpayingForVendorItems'?: {}", preventedOverpayingForVendorItem);
             LOG_INFO("module", "-------------------------------------------------");
+        }
+
+        if ((doBid || doBuyout) && BuyingBotMaxPurchasesPerSellerPerDay > 0)
+        {
+            auto& sellerPurchases = BuyingBotPurchasesBySellerToday[sellerGUIDLow];
+            if (sellerPurchases.first != today)
+                sellerPurchases = { today, 0 };
+            ++sellerPurchases.second;
         }
 
         Player* AHBplayer = AHBPlayers[urand(0, AHBPlayers.size() - 1)];
@@ -2182,6 +2235,8 @@ void AuctionHouseBot::InitializeConfiguration()
     if (PreventOverpayingForVendorItems)
         PopulateVendorItemsPrices();
     BuyingBotWillBidAgainstPlayers = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.BidAgainstPlayers", false);
+    BuyingBotOnlyBuyListableItems = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.OnlyBuyListableItems", false);
+    BuyingBotMaxPurchasesPerSellerPerDay = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.MaxPurchasesPerSellerPerDay", 0);
 
     // Stack Ratios
     RandomStackRatioConsumable = GetRandomStackValue("AuctionHouseBot.ListingStack.RandomRatio.Consumable", 50);
