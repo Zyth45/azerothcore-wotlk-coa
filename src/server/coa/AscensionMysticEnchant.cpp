@@ -1011,11 +1011,16 @@ public:
 };
 }
 
-bool ApplyGuide(Player* player, std::vector<GuideEnchant> const& guide)
+bool ApplyGuide(Player* player, std::vector<GuideEnchant> const& guide, bool teach)
 {
     State* state = Ready ? Find(player) : nullptr;
     if (!state || guide.empty())
         return false;
+    if (teach)
+        for (GuideEnchant const& enchant : guide)
+            if (Enchant const* known = Loaded.FindSpell(enchant.Spell);
+                known && ClassAllowed(*known, player->getClass()))
+                Learn(player, *state, enchant.Spell);
     ClientConfig const config = CurrentClientConfig();
     Character character = Describe(player, config);
     character.Known = &state->Known;
