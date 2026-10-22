@@ -30,7 +30,7 @@
 #    AuctionHouseBot.MinutesBetweenBuyCycle
 #        How many minutes to wait before bidding/buying items again.
 #        Value can be a single number in order to wait X minutes before buying
-#        again, or a pair of numbers separated by a ':' to wait a random 
+#        again, or a pair of numbers separated by a ':' to wait a random
 #        number of minutes between X and Y (e.g. 3:15 to wait 3-15 minutes
 #        between cycles).
 #    Default: 1
@@ -38,7 +38,7 @@
 #    AuctionHouseBot.MinutesBetweenSellCycle
 #        How many minutes to wait before selling items again.
 #        Value can be a single number in order to wait X minutes before selling
-#        again, or a pair of numbers separated by a ':' to wait a random 
+#        again, or a pair of numbers separated by a ':' to wait a random
 #        number of minutes between X and Y (e.g. 3:15 to wait 3-15 minutes
 #        between cycles).
 #    Default: 1
@@ -123,7 +123,7 @@ AuctionHouseBot.ListingExpireTimeInSecondsMax = 86400
 #        math at all in the listing's price value being calculated
 #	 Example: "2589:1000000,4306:100000" would set the fixed price value
 #      of linen cloth to 100 gold and silk cloth to 10 gold each.
-#    Default: 
+#    Default:
 #
 #    AuctionHouseBot.CompleteItemValueOverride.DoApplyBidVariations
 #    AuctionHouseBot.CompleteItemValueOverride.DoApplyBuyoutVariations
@@ -200,7 +200,7 @@ AuctionHouseBot.AdvancedListingRules.UseDropRates.Recipe.AffectedQualities = 2,3
 
 AuctionHouseBot.AdvancedListingRules.UseDropRates.MinDropRate = 0.005
 AuctionHouseBot.AdvancedListingRules.UseDropRates.TiersConfig = 50, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01, 0.005
-AuctionHouseBot.AdvancedListingRules.UseDropRates.DisabledItemIDs = 
+AuctionHouseBot.AdvancedListingRules.UseDropRates.DisabledItemIDs =
 
 ###############################################################################
 #    AuctionHouseBot.MaxBuyoutPriceInCopper
@@ -210,7 +210,7 @@ AuctionHouseBot.AdvancedListingRules.UseDropRates.DisabledItemIDs =
 #
 #    AuctionHouseBot.BuyoutVariationReducePercent
 #    AuctionHouseBot.BuyoutVariationAddPercent
-#        After a price is calculated using the various multipliers for either 
+#        After a price is calculated using the various multipliers for either
 #        a buy or a sell, it is randomized within a band up to +AddPercent
 #        and down to -ReducePercent
 #    Default 0.15 (down) and 0.25 (up) - Which means the price range -15% or up +25%
@@ -266,24 +266,24 @@ AuctionHouseBot.Neutral.MaxItems = 200
 
 ###############################################################################
 # BUYER PROPERTIES
-#    Behavior: 
-#     1) Determining Items to Buy: Every minute the buyer bot will select 
-#        (BuyCandidatesPerBuyCycle) items currently up for auction which are 
+#    Behavior:
+#     1) Determining Items to Buy: Every minute the buyer bot will select
+#        (BuyCandidatesPerBuyCycle) items currently up for auction which are
 #        listed by players as potential purchase items.
-#     2) Price Willing to Pay: The buyer bot will use the same item price 
-#        calculation the seller bot uses, including the random +/- 25% 
-#        (configured by BuyoutVariationAddPercent), and that calculated price 
-#        is then multiplied by (AcceptablePriceModifier) which then becomes 
+#     2) Price Willing to Pay: The buyer bot will use the same item price
+#        calculation the seller bot uses, including the random +/- 25%
+#        (configured by BuyoutVariationAddPercent), and that calculated price
+#        is then multiplied by (AcceptablePriceModifier) which then becomes
 #        the price the buyer will be willing to spend.
 #     3) Buying it: If the price calculated is higher than the buy out price,
 #        then the bot will buy it out.  If not, it will see if it's an item
-#        not yet bidded on by a bot and the price is affordable, then it will 
+#        not yet bidded on by a bot and the price is affordable, then it will
 #        place a bid (outbid, so just over current bid)
 #     - The above behavior is replicated on each enabled auction house.
 #     - If left to default settings, 1 item in each auction house will attempt
 #       to be bought from, if the price calculation seems favorable.
-#     - Note that any item buy attempt, even items above buying price, 
-#       consumes a buy candidate. That means that too many overpriced items 
+#     - Note that any item buy attempt, even items above buying price,
+#       consumes a buy candidate. That means that too many overpriced items
 #       can drown out potential sales.
 #
 #    AuctionHouseBot.Buyer.Enabled
@@ -295,11 +295,11 @@ AuctionHouseBot.Neutral.MaxItems = 200
 #        items will be selected from each of the auction house types (Alliance,
 #        Horde, Neutral).  Meaning if you set this as 10, then up to 10 items
 #        from each AH will be selected (total of 30).  Whole numbers only.
-#        Very large values can impact server performance, and is generally 
-#        not neccessary. This runs once every Buy/Sell cycle as defined 
+#        Very large values can impact server performance, and is generally
+#        not neccessary. This runs once every Buy/Sell cycle as defined
 #        by AuctionHouseBot.AuctionHouseManagerCyclesBetweenBuyOrSell.
 #        Value can be a single number in order to consider buying X items each
-#        Buy/Sell cycle, or a pair of numbers separated by a ':' to consider 
+#        Buy/Sell cycle, or a pair of numbers separated by a ':' to consider
 #        buying a random number between X and Y items. (e.g. 1:5 to consider 1-5 items)
 #    Default: 1 (1 item per auction house is considered per Buy/Sell cycle)
 #
@@ -361,25 +361,25 @@ AuctionHouseBot.Buyer.MaxPurchasesPerSellerPerDay = 20
 #		 "0" will mean the item classification never shows up.  Values must be whole numbers.
 #        For example, if consumable uncommon has a portion of 4 and container normal has
 #         a proportion of 1 with all others being zero, then when an auction is listed
-#         by a seller bot then 80% will be uncommon consumables and 20% will be normal 
+#         by a seller bot then 80% will be uncommon consumables and 20% will be normal
 #         containers.  This won't increase the total number of auctions.
 #
 #    AuctionHouseBot.ListProportion.ListMultipliedItemIDs
 #        Comma separated list of items in the format of "itemID:ListMultplier"
 #        which causes any itemIDs to be listed "ListMultiplier" more times
 #        when that item is rolled. If the ItemsPerCycle limit is reached
-#        in a cycle, the remaining listing counts roll over to the next cycle.  
+#        in a cycle, the remaining listing counts roll over to the next cycle.
 #        Each listing is subjected to independent stack and price calculations.
 #        Listings multplied this way do not have any influence over the
 #        list proportions.  For example, if you make an item list 1000 times,
 #        this won't reduce the list proportion chances for the next item roll
-#        once all of the multiple listings are complete.  ListMultiplier must 
+#        once all of the multiple listings are complete.  ListMultiplier must
 #        be a whole number (no decimals).  The multiple listings can be listed
 #        in other faction auction houses if ItemsPerCycle is met before the
 #        multiplier is expended.
-#	 Example: "2589:4,4306:10" would cause linen cloth to be listed 4 times and 
+#	 Example: "2589:4,4306:10" would cause linen cloth to be listed 4 times and
 #      silk cloth to be listed 10 times when randomly selected for being listed
-#    Default: Many Non-Epic quality unprocessed common trade goods like Linen Cloth 
+#    Default: Many Non-Epic quality unprocessed common trade goods like Linen Cloth
 #      and Peacebloom are in the config by default to over bias those at 10x rate,
 #      as well as health/mana potions at a x5 rate
 ###############################################################################
@@ -436,7 +436,7 @@ AuctionHouseBot.ListProportion.CategoryReagent.QualityRare = 0
 AuctionHouseBot.ListProportion.CategoryReagent.QualityEpic = 0
 AuctionHouseBot.ListProportion.CategoryReagent.QualityLegendary = 0
 AuctionHouseBot.ListProportion.CategoryReagent.QualityArtifact = 0
-AuctionHouseBot.ListProportion.CategoryReagent.QualityHeirloom = 0 
+AuctionHouseBot.ListProportion.CategoryReagent.QualityHeirloom = 0
 
 AuctionHouseBot.ListProportion.CategoryProjectile.QualityPoor = 0
 AuctionHouseBot.ListProportion.CategoryProjectile.QualityNormal = 10
@@ -555,7 +555,7 @@ AuctionHouseBot.PriceMinimumCenterBase.Container = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Weapon = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Gem = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Armor = 1000
-AuctionHouseBot.PriceMinimumCenterBase.Reagent = 1000 
+AuctionHouseBot.PriceMinimumCenterBase.Reagent = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Projectile = 5
 AuctionHouseBot.PriceMinimumCenterBase.TradeGood = 850
 AuctionHouseBot.PriceMinimumCenterBase.Generic = 1000
@@ -566,23 +566,23 @@ AuctionHouseBot.PriceMinimumCenterBase.Key = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Misc = 1000
 AuctionHouseBot.PriceMinimumCenterBase.Glyph = 1000
 
-AuctionHouseBot.PriceMinimumCenterBase.OverrideItems = 
+AuctionHouseBot.PriceMinimumCenterBase.OverrideItems =
 
 ###############################################################################
 #    AuctionHouseBot.AdvancedPricing.<Category>.<Subclass>.Enabled
-#        Enable/Disable the use of advanced (logarithmic) pricing formulas 
-#        for specific subclasses. This behavior attempts to make pricing more 
-#        similar to that of live servers. Generally, many items will have 
-#        "more realistic" prices, but items that are particularly valuable 
+#        Enable/Disable the use of advanced (logarithmic) pricing formulas
+#        for specific subclasses. This behavior attempts to make pricing more
+#        similar to that of live servers. Generally, many items will have
+#        "more realistic" prices, but items that are particularly valuable
 #        (e.g. Black Lotus, Devilsaur Leather) are too anomalous to accurately
-#        model their prices alongside more predictable items - their prices 
+#        model their prices alongside more predictable items - their prices
 #        may be considered "low".
 #
 #        Consider using the Advanced_Pricing_Calculator spreadsheet included
 #        in the "tools" folder of this module for help with changing config settings.
 #
-#        Note that the AdvancedPricing logic also relies on values 
-#        set by AuctionHouseBot.PriceMultiplier.Category*.Quality* 
+#        Note that the AdvancedPricing logic also relies on values
+#        set by AuctionHouseBot.PriceMultiplier.Category*.Quality*
 #    Defaults: true (Enabled)
 #
 #    Note that all price multpliers (along with the advanced pricing) are applied
@@ -619,8 +619,8 @@ AuctionHouseBot.AdvancedPricing.Misc.Pet.Enabled                = true
 #        Multiplier applied to item level when determining auction price, by category
 #        Final multiplier = itemLevel * this value.  Set to 0 (or less) to disable.
 #        Default: 0 (Disabled)
-#       Note: This will be ignored for any matching specific category if 
-#        AdvancedPricing is enabled (above). This applies in combination with 
+#       Note: This will be ignored for any matching specific category if
+#        AdvancedPricing is enabled (above). This applies in combination with
 #        all other price multipliers.
 #
 #    AuctionHouseBot.PriceMultiplier.Category*.Quality*
@@ -642,7 +642,7 @@ AuctionHouseBot.PriceMultiplier.Category.Container = 1
 AuctionHouseBot.PriceMultiplier.Category.Weapon = 1
 AuctionHouseBot.PriceMultiplier.Category.Gem = 1
 AuctionHouseBot.PriceMultiplier.Category.Armor = 1
-AuctionHouseBot.PriceMultiplier.Category.Reagent = 1 
+AuctionHouseBot.PriceMultiplier.Category.Reagent = 1
 AuctionHouseBot.PriceMultiplier.Category.Projectile = 1
 AuctionHouseBot.PriceMultiplier.Category.TradeGood = 1
 AuctionHouseBot.PriceMultiplier.Category.Generic = 1
@@ -717,9 +717,9 @@ AuctionHouseBot.PriceMultiplier.CategoryGem.QualityNormal       = 1.0
 AuctionHouseBot.PriceMultiplier.CategoryGem.QualityUncommon     = 1.2
 AuctionHouseBot.PriceMultiplier.CategoryGem.QualityRare         = 1.2
 AuctionHouseBot.PriceMultiplier.CategoryGem.QualityEpic         = 0.9
-AuctionHouseBot.PriceMultiplier.CategoryGem.QualityLegendary    = 1.0  
+AuctionHouseBot.PriceMultiplier.CategoryGem.QualityLegendary    = 1.0
 AuctionHouseBot.PriceMultiplier.CategoryGem.QualityArtifact     = 1.0
-AuctionHouseBot.PriceMultiplier.CategoryGem.QualityHeirloom     = 1.0  
+AuctionHouseBot.PriceMultiplier.CategoryGem.QualityHeirloom     = 1.0
 
 # Armor
 AuctionHouseBot.PriceMultiplier.CategoryArmor.QualityPoor       = 1.0
@@ -903,7 +903,7 @@ AuctionHouseBot.PriceMultiplier.CategoryPermanent.QualityHeirloom   = 1.0
 #        it will only use the increment if the it's a random stack 'roll'.  A
 #        value of 0 will be treated as a 1
 #
-#       NOTES: Stack sizes of 1 will show up if the RandomRatio is not set to 100. 
+#       NOTES: Stack sizes of 1 will show up if the RandomRatio is not set to 100.
 #        If you want something to always post maxed out, set RandomRatio to
 #        100 and RandomStackIncrement to a value that is at or greater than the
 #        largest possible stack size for that category.  Default configurations
@@ -987,7 +987,7 @@ AuctionHouseBot.ListingStack.MaxStackSize.Glyph = 0
 #        Ranges using a dash (-) can also be used
 #        NOTE: Other filtering will still be honored even if it's listed here
 #		 Example: "2589,3200-3202" would cause Linen Cloth (2589), Burnt Leather Bracers (3200),
-#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not 
+#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not
 #         be subjected to this restriction
 ###############################################################################
 
@@ -995,7 +995,7 @@ AuctionHouseBot.ListedItemLevelRestrict.Enabled = true
 AuctionHouseBot.ListedItemLevelRestrict.UseCraftedItemForCalculation = true
 AuctionHouseBot.ListedItemLevelRestrict.MinItemLevel = 0
 AuctionHouseBot.ListedItemLevelRestrict.MaxItemLevel = 66
-AuctionHouseBot.ListedItemLevelRestrict.ExceptionItemIDs = 
+AuctionHouseBot.ListedItemLevelRestrict.ExceptionItemIDs =
 
 ###############################################################################
 #    AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.Enabled
@@ -1019,14 +1019,14 @@ AuctionHouseBot.ListedItemLevelRestrict.ExceptionItemIDs =
 #        Ranges using a dash (-) can also be used
 #        NOTE: Other filtering will still be honored even if it's listed here
 #		 Example: "2589,3200-3202" would cause Linen Cloth (2589), Burnt Leather Bracers (3200),
-#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not 
+#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not
 #         be subjected to this restriction
 ###############################################################################
 
 AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.Enabled = true
 AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.MinLevel = 0
 AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.MaxLevel = 60
-AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.ExceptionItemIDs = 
+AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.ExceptionItemIDs =
 
 ###############################################################################
 #    AuctionHouseBot.ListedItemIDRestrict.Enabled
@@ -1046,14 +1046,14 @@ AuctionHouseBot.EquipItemUseOrEquipLevelRestrict.ExceptionItemIDs =
 #        Ranges using a dash (-) can also be used
 #        NOTE: Other filtering will still be honored even if it's listed here
 #		 Example: "2589,3200-3202" would cause Linen Cloth (2589), Burnt Leather Bracers (3200),
-#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not 
+#         Barbarian War Axe (3201), and Forest Leather Bracers (3202) to not
 #         be subjected to this restriction
 ###############################################################################
 
 AuctionHouseBot.ListedItemIDRestrict.Enabled = false
 AuctionHouseBot.ListedItemIDRestrict.MinItemID = 0
 AuctionHouseBot.ListedItemIDRestrict.MaxItemID = 200000
-AuctionHouseBot.ListedItemIDRestrict.ExceptionItemIDs = 
+AuctionHouseBot.ListedItemIDRestrict.ExceptionItemIDs =
 
 ###############################################################################
 #    AuctionHouseBot.DisabledItemTextFilter
@@ -1067,10 +1067,10 @@ AuctionHouseBot.ListedItemIDRestrict.ExceptionItemIDs =
 #    AuctionHouseBot.DisabledRecipeProducedItemClassSubClasses
 #        Comma separated list of items in the format of "class:subclass" that
 #        will be filtered out of seller bot listings if DisabledRecipeProducedItemFilterEnabled
-#        is true and the item is produced from a recipe.  The values come from 
-#        ITEM_CLASS_ and ITEM_SUBCLASS_ variables within AzerothCore 
+#        is true and the item is produced from a recipe.  The values come from
+#        ITEM_CLASS_ and ITEM_SUBCLASS_ variables within AzerothCore
 #        (see ItemTemplate.h for a full list).  Can use wildcard (*) for
-#        subclass (but cannot wildcard class).  
+#        subclass (but cannot wildcard class).
 #    Default: Filters out player made weapons (2:*), armor (4:*), pets (15:2) and mounts (15:5)
 #
 #    AuctionHouseBot.DisabledInvalidItemIDs

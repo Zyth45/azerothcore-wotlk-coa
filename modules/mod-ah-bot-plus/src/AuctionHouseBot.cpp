@@ -80,10 +80,10 @@ AuctionHouseBot::AuctionHouseBot() :
     ListedItemLevelRestrictedEnabled(false),
     ListedItemLevelRestrictedUseCraftedItemForCalculation(true),
     ListedItemLevelMin(0),
-    ListedItemLevelMax(999),    
+    ListedItemLevelMax(999),
     ListedItemUseOrEquipRestrictedEnabled(false),
     ListedItemUseOrEquipRestrictMinLevel(0),
-    ListedItemUseOrEquipRestrictMaxLevel(999),    
+    ListedItemUseOrEquipRestrictMaxLevel(999),
     RandomStackRatioConsumable(1),
     RandomStackRatioContainer(1),
     RandomStackRatioWeapon(1),
@@ -468,7 +468,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
     /* "ADVANCED" SUBCLASS PRICE MULTIPLIER FORMULA NOTES
 
       1. multiplierHelper = log(1 + b * ItemLevel)
-      2. 
+      2.
             clothMultiplierHelper ^ p
         ---------------------------------   +   c * (clothMultiplierHelper ^ r)  -  d
           1 + a * clothMultiplierHelper
@@ -480,7 +480,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
         c  // Scaling coefficient for second term
         r  // Exponent for second term (adds nonlinear boost)
         d  // Constant shift (adjusts baseline multiplier). This becomes apparent if you graph the equation - it shifts the entire curve down.
-     
+
       Notes:
       - This formula produces a multiplier that grows logarithmically with ItemLevel (uses natural log, not base10)
       - The first term (before '+') heavily influences low item levels, the second term adds some fine-tuning for higher levels.
@@ -495,7 +495,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
         {
             case ITEM_SUBCLASS_POTION:
             {
-                if (!AdvancedPricingConsumablePotionEnabled) 
+                if (!AdvancedPricingConsumablePotionEnabled)
                     break;
                 double potionMultiplierHelper = std::log(1.0 + (0.08 * itemProto->ItemLevel));
                 advancedPricingMultiplier = ((std::pow(potionMultiplierHelper,3.0)) / (1 + (4.0 * potionMultiplierHelper))) + (std::pow(potionMultiplierHelper,2.5));
@@ -503,7 +503,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
             }
             case ITEM_SUBCLASS_ELIXIR:
             {
-                if (!AdvancedPricingConsumableElixirEnabled) 
+                if (!AdvancedPricingConsumableElixirEnabled)
                     break;
                 double elixirMultiplierHelper = std::log(1.0 + (1.6 * itemProto->ItemLevel));
                 advancedPricingMultiplier = ((std::pow(elixirMultiplierHelper,3.1)) / (1 + (5.0 * elixirMultiplierHelper))) + (0.05 * std::pow(elixirMultiplierHelper,3.2)) - 1.0;
@@ -527,13 +527,13 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
         double gemMultiplierHelper = std::log(1.0 + (0.05 * itemProto->ItemLevel));
         advancedPricingMultiplier = ((std::pow(gemMultiplierHelper,1.0)) / (1 + (10.0 * gemMultiplierHelper))) + (std::pow(gemMultiplierHelper,3.0));
     }
-    else if (itemProto->Class == ITEM_CLASS_TRADE_GOODS) 
+    else if (itemProto->Class == ITEM_CLASS_TRADE_GOODS)
     {
         switch (itemProto->SubClass)
         {
             case ITEM_SUBCLASS_CLOTH:
             {
-                if (!AdvancedPricingTradeGoodClothEnabled) 
+                if (!AdvancedPricingTradeGoodClothEnabled)
                     break;
                 double clothMultiplierHelper = std::log(1.0 + (itemProto->ItemLevel));
                 advancedPricingMultiplier = ((std::pow(clothMultiplierHelper,2.0)) / (1 + (0.8 * clothMultiplierHelper))) + (0.001 * std::pow(clothMultiplierHelper,3.5)) - 0.3;
@@ -541,15 +541,15 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
             }
             case ITEM_SUBCLASS_HERB:
             {
-                if (!AdvancedPricingTradeGoodHerbEnabled) 
+                if (!AdvancedPricingTradeGoodHerbEnabled)
                     break;
                 double herbMultiplierHelper = std::log(1.0 + (5.0 * itemProto->ItemLevel));
-                advancedPricingMultiplier = (std::pow(herbMultiplierHelper,3.0) / (1 + (1.8 * herbMultiplierHelper))) - 4.2; 
+                advancedPricingMultiplier = (std::pow(herbMultiplierHelper,3.0) / (1 + (1.8 * herbMultiplierHelper))) - 4.2;
                 break;
             }
             case ITEM_SUBCLASS_METAL_STONE:
             {
-                if (!AdvancedPricingTradeGoodMetalStoneEnabled) 
+                if (!AdvancedPricingTradeGoodMetalStoneEnabled)
                     break;
                 double metalMultiplierHelper = std::log(1.0 + (75.0 * itemProto->ItemLevel));
                 advancedPricingMultiplier =  ((std::pow(metalMultiplierHelper,3.0)) / (1 + (7.0 * metalMultiplierHelper))) + (0.001 * std::pow(metalMultiplierHelper,3.5)) - 5.2;
@@ -557,7 +557,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
             }
             case ITEM_SUBCLASS_LEATHER:
             {
-                if (!AdvancedPricingTradeGoodLeatherEnabled) 
+                if (!AdvancedPricingTradeGoodLeatherEnabled)
                     break;
                 double leatherMultiplierHelper = std::log(1.0 + (0.25 * itemProto->ItemLevel));
                 advancedPricingMultiplier = ((std::pow(leatherMultiplierHelper,0.15)) / (1 + (2.0 * leatherMultiplierHelper))) + (0.4 * std::pow(leatherMultiplierHelper,3.0)) - 0.2;
@@ -565,15 +565,15 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
             }
             case ITEM_SUBCLASS_ENCHANTING:
             {
-                if (!AdvancedPricingTradeGoodEnchantingEnabled) 
+                if (!AdvancedPricingTradeGoodEnchantingEnabled)
                     break;
                 double enchantingMultiplierHelper = std::log(1.0 + (0.25 * itemProto->ItemLevel));
-                advancedPricingMultiplier = ((std::pow(enchantingMultiplierHelper,0.15)) / (1 + (2.0 * enchantingMultiplierHelper))) + (0.4 * std::pow(enchantingMultiplierHelper,3.0)) - 0.2; 
+                advancedPricingMultiplier = ((std::pow(enchantingMultiplierHelper,0.15)) / (1 + (2.0 * enchantingMultiplierHelper))) + (0.4 * std::pow(enchantingMultiplierHelper,3.0)) - 0.2;
                 break;
             }
             case ITEM_SUBCLASS_ELEMENTAL:
             {
-                if (!AdvancedPricingTradeGoodElementalEnabled) 
+                if (!AdvancedPricingTradeGoodElementalEnabled)
                     break;
                 advancedPricingMultiplier = 85 - (itemProto->ItemLevel / 0.97);
                 break;
@@ -583,7 +583,7 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
                 if (!AdvancedPricingTradeGoodMeatEnabled)
                     break;
                 double meatMultiplierHelper = std::log(1.0 + (0.5 * itemProto->ItemLevel));
-                advancedPricingMultiplier = ((std::pow(meatMultiplierHelper,3.2)) / (1 + (2.0 * meatMultiplierHelper))) + (0.05 * std::pow(meatMultiplierHelper,3.2)) - 0.1; 
+                advancedPricingMultiplier = ((std::pow(meatMultiplierHelper,3.2)) / (1 + (2.0 * meatMultiplierHelper))) + (0.05 * std::pow(meatMultiplierHelper,3.2)) - 0.1;
                 break;
             }
             default:
@@ -597,15 +597,15 @@ float AuctionHouseBot::GetAdvancedPricingMultiplier(ItemTemplate const* itemProt
             // Tuned for pricing lockboxes
             case ITEM_SUBCLASS_JUNK:
             {
-                if (!AdvancedPricingMiscJunkEnabled) 
+                if (!AdvancedPricingMiscJunkEnabled)
                     break;
                 double miscMultiplierHelper = std::log(1.0 + (0.12 * itemProto->ItemLevel));
-                advancedPricingMultiplier = (std::pow(miscMultiplierHelper,3.2) / (1 + miscMultiplierHelper)); 
+                advancedPricingMultiplier = (std::pow(miscMultiplierHelper,3.2) / (1 + miscMultiplierHelper));
                 break;
             }
             case ITEM_SUBCLASS_JUNK_MOUNT:
             {
-                if (!AdvancedPricingMiscMountEnabled) 
+                if (!AdvancedPricingMiscMountEnabled)
                     break;
                 switch (itemProto->Quality)
                 {
@@ -983,13 +983,13 @@ void AuctionHouseBot::PopulateItemCandidatesAndProportions()
         }
 
         // Disable anything with the string literal of a testing or deprecated item
-        if (DisabledItemTextFilter == true && 
+        if (DisabledItemTextFilter == true &&
             (itr->second.Name1.find("Test ") != std::string::npos ||
             itr->second.Name1.find("TEST") != std::string::npos ||
             itr->second.Name1.find("Deprecated") != std::string::npos ||
             itr->second.Name1.find("Depricated") != std::string::npos ||
             itr->second.Name1.find(" Epic ") != std::string::npos ||
-            itr->second.Name1.find("]") != std::string::npos ||            
+            itr->second.Name1.find("]") != std::string::npos ||
             itr->second.Name1.find("D'Sak") != std::string::npos ||
             itr->second.Name1.find("(") != std::string::npos ||
             itr->second.Name1.find("OLD") != std::string::npos ||
@@ -1417,8 +1417,8 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
     // Search creature loot templates, referenced loot_loot_template, group_loot tables, and object_loot tables for items' drop rates
     std::string directDropString = R"SQL(
         with chances AS (
-			SELECT it.entry     AS itemID, 
-                clt.Chance      AS direct_chance, 
+            SELECT it.entry     AS itemID,
+                clt.Chance      AS direct_chance,
                 0               AS reference_chance
             FROM creature_template ct
             JOIN creature_loot_template clt ON clt.Entry = ct.lootid
@@ -1428,13 +1428,13 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
         SELECT itemID,
                 MIN(direct_chance)  AS direct_chance,
                 0                   AS reference_chance
-                FROM chances 
+                FROM chances
                 GROUP BY itemID
     )SQL";
 
     std::string referenceDropString = R"SQL(
         WITH chances AS (
-            SELECT 
+            SELECT
                 rlt.Item AS itemID,
                 CASE
                     WHEN COUNT(clt.Entry) > 0 THEN
@@ -1461,7 +1461,7 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
         SELECT itemID,
                0                     AS direct_chance,
                MIN(reference_chance) AS reference_chance
-        FROM chances 
+        FROM chances
         GROUP BY itemID
     )SQL";
 
@@ -1476,7 +1476,7 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
             SELECT DISTINCT Reference AS referenceID FROM creature_loot_template WHERE REFERENCE != 0
         ),
         reference_data AS (
-            SELECT 
+            SELECT
                 rlt.Entry  AS referenceID,
                 rlt.Item   AS itemID,
                 rlt.Chance AS referenceChance,
@@ -1493,11 +1493,11 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
             WHERE it.class IN ({})
             AND it.quality IN ({})
         )
-         
+
         SELECT  itemID,
                 0                     AS direct_chance,
                 MIN(reference_chance) AS reference_chance
-                FROM chances 
+                FROM chances
                 GROUP BY itemID
     )SQL";
 
@@ -1508,9 +1508,9 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
             JOIN item_template it ON clt.Item = it.entry
             WHERE clt.groupid != 0 AND clt.REFERENCE = 0
         )
-        SELECT item_id, 
-                0 AS direct_chance, 
-                CASE 
+        SELECT item_id,
+                0 AS direct_chance,
+                CASE
                     WHEN chance = 0 THEN (1.0 / item_count) * (1 - POWER(1 - (1.0 / item_count), item_count)) * 100
                     WHEN chance != 0 THEN ((1.0 / item_count) * (1 - POWER(1 - (1.0 / item_count), item_count)) * 100) * chance/100
                 END AS reference_chance
@@ -1528,7 +1528,7 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
             FROM item_loot_template ilt
             JOIN item_template it ON it.entry = ilt.Item
             WHERE it.class IN ({}) AND it.quality IN ({}) AND chance != 0
-        UNION ALL 
+        UNION ALL
         SELECT it.entry    AS itemID,
                golt.Chance AS direct_chance,
                0		   AS reference_chance
@@ -1550,8 +1550,8 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
         return;
     }
 
-    // Add drop rate of all results to CachedItemDropRates 
-    auto parseResults = [this](QueryResult result, bool overwriteDropRate) 
+    // Add drop rate of all results to CachedItemDropRates
+    auto parseResults = [this](QueryResult result, bool overwriteDropRate)
     {
         do {
             Field* fields = result->Fetch();
@@ -1567,15 +1567,15 @@ void AuctionHouseBot::PopulateItemDropChancesForCategoryAndQuality(ItemClass cat
                 continue;
 
             if (!fields[1].IsNull())
-                directDropChance = fields[1].Get<double>(); 
+                directDropChance = fields[1].Get<double>();
             if (!fields[2].IsNull())
                 referenceDropChance = fields[2].Get<double>();
-            
+
             // Choose higher of two rates (one is normally 0), then raise to MinDropRate if less than
             double higherDropChance = (directDropChance > referenceDropChance) ? directDropChance : referenceDropChance;
             higherDropChance = (higherDropChance < AdvancedListingRuleUseDropRatesMinDropRate) ? AdvancedListingRuleUseDropRatesMinDropRate : higherDropChance;
 
-            if (CachedItemDropRates[itemID] < higherDropChance) 
+            if (CachedItemDropRates[itemID] < higherDropChance)
                 CachedItemDropRates[itemID] = higherDropChance;
 
         } while (result->NextRow());
@@ -1706,7 +1706,7 @@ void AuctionHouseBot::PopulateQuestRewardItemIDs()
         return;
     }
 
-    do 
+    do
     {
         uint32 id = questRewardsResult->Fetch()->Get<uint32>();
         QuestRewardItemIDs.insert(id);
@@ -1719,7 +1719,7 @@ int AuctionHouseBot::GetItemDropChanceTier(double dropRate)
     {
         double mapDropRate = pair.first;
         int mapTier = pair.second;
-        if (dropRate >= mapDropRate) 
+        if (dropRate >= mapDropRate)
             return mapTier;
     }
 
@@ -1784,10 +1784,10 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
             continue;
 
         // get exact item information
-		Item *pItem = sAuctionMgr->GetAItem(auction->item_guid);
+        Item *pItem = sAuctionMgr->GetAItem(auction->item_guid);
         if (!pItem || pItem->GetCount() == 0)
         {
-			if (debug_Out)
+            if (debug_Out)
                 LOG_ERROR("module", "AHBuyer: Item {} doesn't exist, perhaps bought already?", auction->item_guid.ToString());
             continue;
         }
@@ -1988,11 +1988,11 @@ void AuctionHouseBot::Update()
         CyclesBetweenSellAction = urand(CyclesBetweenSellActionMin, CyclesBetweenSellActionMax);
         sellReady = true;
     }
-    
+
     // Only update if a Buy or Sell update cycle has been hit
     if (!buyReady && !sellReady)
         return;
-    
+
     // Load all AH Bot Players
     std::vector<std::pair<std::unique_ptr<Player>, std::unique_ptr<WorldSession>>> AHBPlayers;
     AHBPlayers.reserve(AHCharacters.size());
@@ -2026,7 +2026,7 @@ void AuctionHouseBot::Update()
         playersPointerVector.emplace_back(pair.first.get());
 
      // List New Auctions
-     if (sellReady) 
+     if (sellReady)
      {
          if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION) == false)
          {
@@ -2037,7 +2037,7 @@ void AuctionHouseBot::Update()
      }
 
      // Place New Bids
-     if (buyReady && BuyingBotBuyCandidatesPerBuyCycleMin > 0) 
+     if (buyReady && BuyingBotBuyCandidatesPerBuyCycleMin > 0)
      {
          if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION) == false)
          {

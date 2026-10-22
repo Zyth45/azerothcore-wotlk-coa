@@ -106,7 +106,7 @@ public:
                 else
                     sendMail = false;
             }
-        }   
+        }
     }
 
     void OnBeforeAuctionHouseMgrSendAuctionOutbiddedMail(AuctionHouseMgr* /*auctionHouseMgr*/, AuctionEntry* auction, Player* oldBidder, uint32& /*oldBidder_accId*/, Player* newBidder, uint32& newPrice, bool& /*sendNotification*/, bool& /*sendMail*/) override
@@ -226,7 +226,7 @@ public:
         }
 
         LOG_INFO("module", "AuctionHouseBot: Config reloaded.");
-        handler->PSendSysMessage("AuctionHouseBot: Config reloaded.");        
+        handler->PSendSysMessage("AuctionHouseBot: Config reloaded.");
         return true;
     }
 
