@@ -344,6 +344,12 @@ AuctionHouseBot.Neutral.MaxItems = 200
 #        Most bids and buyouts the buyer bot makes on one seller's auctions each
 #        day (server time). 0 means no limit.
 #    Default: 0
+#
+#    AuctionHouseBot.Buyer.InstantBids
+#        When enabled, a bid the buyer bot is willing to make wins the auction
+#        at once: the seller is paid the bid by mail right away instead of when
+#        the auction expires (12 to 48 hours later).
+#    Default: false
 ###############################################################################
 
 AuctionHouseBot.Buyer.Enabled = true
@@ -354,6 +360,7 @@ AuctionHouseBot.Buyer.PreventOverpayingForVendorItems = true
 AuctionHouseBot.Buyer.BidAgainstPlayers = false
 AuctionHouseBot.Buyer.OnlyBuyListableItems = true
 AuctionHouseBot.Buyer.MaxPurchasesPerSellerPerDay = 20
+AuctionHouseBot.Buyer.InstantBids = true
 
 ###############################################################################
 #    AuctionHouseBot.ListProportion.Category*.Quality*

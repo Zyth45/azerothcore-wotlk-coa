@@ -73,6 +73,7 @@ AuctionHouseBot::AuctionHouseBot() :
     BuyingBotWillBidAgainstPlayers(false),
     BuyingBotOnlyBuyListableItems(false),
     BuyingBotMaxPurchasesPerSellerPerDay(0),
+    BuyingBotInstantBids(false),
     AHCharactersGUIDsForQuery(""),
     ItemsPerCycle(75),
     DisabledItemTextFilter(true),
@@ -1906,6 +1907,7 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
             LOG_INFO("module", "AHBuyer: Calculated Bid Amount (0 means too expensive to bid): {}", calcBidAmount);
             LOG_INFO("module", "AHBuyer: Decided to Buyout?: {}", doBuyout);
             LOG_INFO("module", "AHBuyer: Decided to Bid?: {}", doBid);
+            LOG_INFO("module", "AHBuyer: Bid settled at once (InstantBids)?: {}", doBid && !doBuyout && BuyingBotInstantBids);
             LOG_INFO("module", "AHBuyer: Stopped from buying due to 'PreventOverpayingForVendorItems'?: {}", preventedOverpayingForVendorItem);
             LOG_INFO("module", "-------------------------------------------------");
         }
@@ -1920,7 +1922,10 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
 
         Player* AHBplayer = AHBPlayers[urand(0, AHBPlayers.size() - 1)];
 
-        if (doBid)
+        // With InstantBids, an acceptable bid wins the auction at once: the seller is paid the bid now, not at expiry
+        bool const settleNow = doBuyout || (doBid && BuyingBotInstantBids);
+
+        if (doBid && !settleNow)
         {
             auto trans = CharacterDatabase.BeginTransaction();
 
@@ -1940,14 +1945,15 @@ void AuctionHouseBot::AddNewAuctionBuyerBotBid(std::vector<Player*> AHBPlayers, 
 
             CharacterDatabase.CommitTransaction(trans);
         }
-        else if (doBuyout)
+        else if (settleNow)
         {
+            uint64 const price = doBuyout ? uint64(auction->buyout) : calcBidAmount;
             auto trans = CharacterDatabase.BeginTransaction();
 
             if ((auction->bidder) && (AHBplayer->GetGUID() != auction->bidder))
-                sAuctionMgr->SendAuctionOutbiddedMail(auction, auction->buyout, AHBplayer, trans);
+                sAuctionMgr->SendAuctionOutbiddedMail(auction, price, AHBplayer, trans);
             auction->bidder = AHBplayer->GetGUID();
-            auction->bid = auction->buyout;
+            auction->bid = price;
 
             // Send mails to buyer & seller
             sAuctionMgr->SendAuctionSuccessfulMail(auction, trans);
@@ -2237,6 +2243,7 @@ void AuctionHouseBot::InitializeConfiguration()
     BuyingBotWillBidAgainstPlayers = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.BidAgainstPlayers", false);
     BuyingBotOnlyBuyListableItems = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.OnlyBuyListableItems", false);
     BuyingBotMaxPurchasesPerSellerPerDay = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Buyer.MaxPurchasesPerSellerPerDay", 0);
+    BuyingBotInstantBids = sConfigMgr->GetOption<bool>("AuctionHouseBot.Buyer.InstantBids", false);
 
     // Stack Ratios
     RandomStackRatioConsumable = GetRandomStackValue("AuctionHouseBot.ListingStack.RandomRatio.Consumable", 50);
