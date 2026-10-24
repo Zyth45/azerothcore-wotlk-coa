@@ -382,7 +382,7 @@ namespace
 
 void WorldSession::UpdateRecruitAFriendRewards(bool force)
 {
-    if (!_player || !_player->IsInWorld())
+    if (IsBot() || !_player || !_player->IsInWorld())
         return;
     time_t const now = GameTime::GetGameTime().count();
     if (!force && now < _rafRewardsNextUpdate)
