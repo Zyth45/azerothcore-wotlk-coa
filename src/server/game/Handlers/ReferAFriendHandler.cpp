@@ -427,7 +427,15 @@ void WorldSession::RecoverRecruitAFriendRewards()
 {
     auto* claims = LoginDatabase.GetPreparedStatement(LOGIN_SEL_RAF_CLAIMS);
     claims->SetData(0, GetAccountId());
-    PreparedQueryResult rows = LoginDatabase.Query(claims);
+    GetQueryProcessor().AddCallback(LoginDatabase.AsyncQuery(claims).WithPreparedCallback(
+        [this](PreparedQueryResult rows)
+        {
+            DeliverRecruitAFriendRewards(std::move(rows));
+        }));
+}
+
+void WorldSession::DeliverRecruitAFriendRewards(PreparedQueryResult rows)
+{
     if (!rows)
         return;
     do

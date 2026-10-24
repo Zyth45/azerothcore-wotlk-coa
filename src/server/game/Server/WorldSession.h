@@ -701,6 +701,7 @@ public:
     void UpdateRecruitAFriendRewards(bool force = false);
     bool HandleRecruitAFriendRewardsCommand(std::string const& command);
     void RecoverRecruitAFriendRewards();
+    void DeliverRecruitAFriendRewards(PreparedQueryResult rows);
 
     // Packets cooldown
     time_t GetCalendarEventCreationCooldown() const { return _calendarEventCreationCooldown; }
