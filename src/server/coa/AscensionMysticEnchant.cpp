@@ -1011,19 +1011,17 @@ public:
 };
 }
 
-bool ApplyGuide(Player* player, std::vector<GuideEnchant> const& guide, bool teach)
+bool ApplyGuide(Player* player, std::vector<GuideEnchant> const& guide, bool learnMissing)
 {
     State* state = Ready ? Find(player) : nullptr;
     if (!state || guide.empty())
         return false;
-    if (teach)
-        for (GuideEnchant const& enchant : guide)
-            if (Enchant const* known = Loaded.FindSpell(enchant.Spell);
-                known && ClassAllowed(*known, player->getClass()))
-                Learn(player, *state, enchant.Spell);
     ClientConfig const config = CurrentClientConfig();
     Character character = Describe(player, config);
     character.Known = &state->Known;
+    if (learnMissing)
+        for (uint32 spell : GuideLessons(Loaded, character, guide))
+            Learn(player, *state, spell);
     Slots const before = state->Active();
     Slots const after = GuideSlots(Loaded, character, before, guide);
     if (after == before)
