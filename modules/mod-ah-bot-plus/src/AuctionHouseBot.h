@@ -155,6 +155,7 @@ private:
     bool BuyingBotWillBidAgainstPlayers;
     bool BuyingBotOnlyBuyListableItems;
     uint32 BuyingBotMaxPurchasesPerSellerPerDay;
+    bool BuyingBotInstantBids;
     std::unordered_map<uint32, std::pair<uint32, uint32>> BuyingBotPurchasesBySellerToday;
     std::vector<uint32> vendorItemsPrices;
     std::string AHCharactersGUIDsForQuery;
