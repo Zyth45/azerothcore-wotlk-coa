@@ -102,6 +102,7 @@ float CONF_use_minHeight = -500.0f;
 bool  CONF_allow_float_to_int   = true;
 std::set<uint32> CONF_only_maps;
 std::set<uint32> CONF_skip_maps;
+bool  CONF_original_archives = false;
 float CONF_float_to_int8_limit  = 2.0f;      // Max accuracy = val/256
 float CONF_float_to_int16_limit = 2048.0f;   // Max accuracy = val/65536
 float CONF_flat_height_delta_limit = 0.005f; // If max - min less this value - surface is flat
@@ -158,6 +159,7 @@ void Usage(char* prg)
         "-f height stored as int (less map size but lost some accuracy) 1 by default\n"\
         "-m extract only this map id (repeatable)\n"\
         "-x skip this map id (repeatable)\n"\
+        "-r read <archive>.ORIGINAL instead of an archive replaced by a client patch\n"\
         "Example: %s -f 0 -i \"c:\\games\\game\"", prg, prg);
     exit(1);
 }
@@ -221,6 +223,9 @@ void HandleArgs(int argc, char* arg[])
                     CONF_skip_maps.insert(atoi(arg[(c++) + 1]));
                 else
                     Usage(arg[0]);
+                break;
+            case 'r':
+                CONF_original_archives = true;
                 break;
             case 'e':
                 if (c + 1 < argc)                           // all ok
@@ -1238,8 +1243,10 @@ void LoadClientArchives(int const locale)
         if (!FileExists(archive.c_str()))
             continue;
 
+        std::string const original = archive + ".ORIGINAL";
+        std::string const path = CONF_original_archives && FileExists(original.c_str()) ? original : archive;
         std::size_t const before = gOpenArchives.size();
-        new MPQArchive(archive.c_str());
+        new MPQArchive(path.c_str());
         if (gOpenArchives.size() > before)
             ++opened;
     }
