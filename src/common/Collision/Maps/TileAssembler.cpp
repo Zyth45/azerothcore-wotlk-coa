@@ -506,7 +506,7 @@ namespace VMAP
             uint16* indexarray = new uint16[nindexes];
             READ_OR_RETURN_WITH_DELETE(indexarray, nindexes * sizeof(uint16));
             triangles.reserve(nindexes / 3);
-            for (uint32 i = 0; i < nindexes; i += 3)
+            for (uint32 i = 0; i + 2 < nindexes; i += 3)
             {
                 triangles.push_back(MeshTriangle(indexarray[i], indexarray[i + 1], indexarray[i + 2]));
             }

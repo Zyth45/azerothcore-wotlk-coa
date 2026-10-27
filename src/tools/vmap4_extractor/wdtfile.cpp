@@ -73,8 +73,9 @@ bool WDTFile::init(uint32 mapId)
             // global map objects
             if (size)
             {
-                char* buf = new char[size];
+                char* buf = new char[size + 1];
                 _file.read(buf, size);
+                buf[size] = 0;
                 char* p = buf;
                 while (p < buf + size)
                 {

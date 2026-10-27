@@ -116,8 +116,9 @@ bool ADTFile::init(uint32 map_num, uint32 tileX, uint32 tileY)
         {
             if (size)
             {
-                char* buf = new char[size];
+                char* buf = new char[size + 1];
                 _file.read(buf, size);
+                buf[size] = 0;
                 char* p = buf;
                 while (p < buf + size)
                 {
@@ -139,8 +140,9 @@ bool ADTFile::init(uint32 map_num, uint32 tileX, uint32 tileY)
         {
             if (size)
             {
-                char* buf = new char[size];
+                char* buf = new char[size + 1];
                 _file.read(buf, size);
+                buf[size] = 0;
                 char* p = buf;
                 while (p < buf + size)
                 {
