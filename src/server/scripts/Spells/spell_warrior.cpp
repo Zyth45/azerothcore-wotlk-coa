@@ -50,6 +50,9 @@ enum WarriorSpells
     SPELL_WARRIOR_SLAM                              = 50783,
     SPELL_WARRIOR_STORM_SLAM                        = 903140,
     SPELL_WARRIOR_STORM_SLAM_DAMAGE                 = 903246,
+    SPELL_WARRIOR_FROZEN_SLAM_FIRST_RANK            = 903130,
+    SPELL_WARRIOR_FROZEN_SLAM_LAST_RANK             = 903139,
+    SPELL_WARRIOR_FROZEN_SLAM_DAMAGE                = 903245,
     SPELL_WARRIOR_SUNDER_ARMOR                      = 58567,
     SPELL_WARRIOR_SWEEPING_STRIKES_EXTRA_ATTACK_1   = 12723,
     SPELL_WARRIOR_SWEEPING_STRIKES_EXTRA_ATTACK_2   = 26654,
@@ -325,7 +328,13 @@ class spell_warr_slam : public SpellScript
 
     static uint32 DamageSpell(SpellInfo const* info)
     {
-        return info->Id == SPELL_WARRIOR_STORM_SLAM ? SPELL_WARRIOR_STORM_SLAM_DAMAGE : SPELL_WARRIOR_SLAM;
+        if (info->Id == SPELL_WARRIOR_STORM_SLAM)
+            return SPELL_WARRIOR_STORM_SLAM_DAMAGE;
+
+        if (info->Id >= SPELL_WARRIOR_FROZEN_SLAM_FIRST_RANK && info->Id <= SPELL_WARRIOR_FROZEN_SLAM_LAST_RANK)
+            return SPELL_WARRIOR_FROZEN_SLAM_DAMAGE;
+
+        return SPELL_WARRIOR_SLAM;
     }
 
     bool Validate(SpellInfo const* info) override
@@ -431,7 +440,7 @@ class spell_warr_execute : public SpellScript
 
             caster->SetPower(POWER_RAGE, uint32(newRage));
             // Glyph of Execution bonus
-            if (AuraEffect* aurEff = caster->GetAuraEffect(SPELL_WARRIOR_GLYPH_OF_EXECUTION, EFFECT_0))
+            if (AuraEffect* aurEff = caster->GetAuraEffectOfRankedSpellOrTwin(SPELL_WARRIOR_GLYPH_OF_EXECUTION, EFFECT_0))
                 rageUsed += aurEff->GetAmount() * 10;
 
             int32 bp = GetEffectValue() + int32(rageUsed * spellInfo->Effects[effIndex].DamageMultiplier + caster->GetTotalAttackPowerValue(BASE_ATTACK) * 0.2f);
@@ -823,7 +832,7 @@ class spell_warr_vigilance_redirect_threat : public SpellScript
     void HandleGlyph(SpellEffIndex /*effIndex*/)
     {
         if (Unit* warrior = GetHitUnit())
-            if (AuraEffect const* glyph = warrior->GetAuraEffect(SPELL_WARRIOR_GLYPH_OF_VIGILANCE, EFFECT_0))
+            if (AuraEffect const* glyph = warrior->GetAuraEffectOfRankedSpellOrTwin(SPELL_WARRIOR_GLYPH_OF_VIGILANCE, EFFECT_0))
                 SetEffectValue(GetEffectValue() + glyph->GetAmount());
     }
 

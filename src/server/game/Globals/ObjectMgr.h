@@ -41,6 +41,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 
 class Item;
 struct DungeonProgressionRequirements;
@@ -965,6 +966,11 @@ public:
         return nullptr;
     }
 
+    [[nodiscard]] bool IsRaidEncounterKillCredit(uint32 creatureEntry) const
+    {
+        return _raidEncounterKillCreditStore.contains(creatureEntry);
+    }
+
     void LoadQuests();
     void LoadQuestMoneyRewards();
     void LoadQuestStartersAndEnders()
@@ -1042,6 +1048,8 @@ public:
     void LoadCreatureTemplate(Field* fields, bool triggerHook = false);
     void LoadCreatureTemplateModels();
     void LoadCreatureTemplateAddons();
+    void LoadAscensionNpcOverheadIcons();
+    void ApplyAscensionNpcOverheadIcon(Creature& creature) const;
     void LoadCreatureTemplateResistances();
     void LoadCreatureTemplateSpells();
     void LoadCreatureCustomIDs();
@@ -1577,6 +1585,7 @@ private:
     AreaTriggerScriptContainer _areaTriggerScriptStore;
     DungeonProgressionRequirementsContainer _accessRequirementStore;
     DungeonEncounterContainer _dungeonEncounterStore;
+    std::unordered_set<uint32> _raidEncounterKillCreditStore;
 
     RepRewardRateContainer _repRewardRateStore;
     RepOnKillContainer _repOnKillStore;
@@ -1672,6 +1681,7 @@ private:
     CreatureModelContainer _creatureModelStore;
     CreatureAddonContainer _creatureAddonStore;
     CreatureAddonContainer _creatureTemplateAddonStore;
+    std::unordered_map<uint32, uint32> _ascensionNpcOverheadIcons;
     std::unordered_map<ObjectGuid::LowType, CreatureMovementData> _creatureMovementOverrides;
     GameObjectAddonContainer _gameObjectAddonStore;
     GameObjectQuestItemMap _gameObjectQuestItemStore;

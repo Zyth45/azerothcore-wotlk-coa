@@ -4696,6 +4696,22 @@ AllowTwoSide.Interaction.Arena = 0
 AllowTwoSide.Interaction.Auction = 0
 
 #
+#    AllowTwoSide.Interaction.Mail
+#        Description: Allow sending mails between factions.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+AllowTwoSide.Interaction.Mail = 1
+
+#
+#    AllowTwoSide.Trade
+#        Description: Allow trading between factions.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+AllowTwoSide.Trade = 1
+
+#
 #    AllowTwoSide.WhoList
 #        Description: Show characters of both factions in the who list and the friends list.
 #        Default:     1 - (Enabled)
@@ -4738,17 +4754,23 @@ RecruitAFriend.MaxLevel = 60
 #    RecruitAFriend.MaxDifference
 #        Description: Highest level difference between linked Recruiter and Friend benefit from
 #                     the Recruit-A-Friend experience multiplier.
-#        Default:     4
+#        Default:     30
 
-RecruitAFriend.MaxDifference = 4
+#    Legacy value 4 is automatically treated as 30 when loading or reloading the config.
+RecruitAFriend.MaxDifference = 30
 
 #
 #    MaxRecruitAFriendBonusDistance
-#        Description: Max distance between character and and group to gain the Recruit-A-Friend
-#                     XP multiplier.
+#        Description: Max distance for Recruit-A-Friend level grants and reputation bonuses.
 #        Default:     100
 
 MaxRecruitAFriendBonusDistance = 100
+
+#    MaxRecruitAFriendXPDistance
+#        Description: Max distance between linked group members for the Recruit-A-Friend XP bonus.
+#        Default:     200
+
+MaxRecruitAFriendXPDistance = 200
 
 #
 ###################################################################################################
@@ -5096,3 +5118,11 @@ Cluster.IsCrossrealm=0
 # CLUSTER SETTINGS END                                                                            #
 #                                                                                                 #
 ###################################################################################################
+
+# Social.AccountWideFriends
+# Share friends/notes across owner characters and follow the friend's current character.
+# Requires the Ascension client friend-metadata protocol. Not for stock 3.3.5 clients.
+# Existing character friendships are imported once per account on first use after enabling.
+# Conflicting notes or more than 50 friend accounts require administrator reconciliation.
+# Ignore lists remain character-specific. Restart required; default disabled.
+Social.AccountWideFriends = 0

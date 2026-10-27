@@ -350,7 +350,7 @@ class spell_warl_generic_scaling : public AuraScript
                 // Glyph of felguard, 99% sure this is a HACK
                 if (GetStockPetEntry(pet->GetEntry()) == NPC_FELGUARD)
                 {
-                    if (AuraEffect* glyph = owner->GetAuraEffect(SPELL_GLYPH_OF_FELGUARD, EFFECT_0))
+                    if (AuraEffect* glyph = owner->GetAuraEffectOfRankedSpellOrTwin(SPELL_GLYPH_OF_FELGUARD, EFFECT_0))
                     {
                         amount += CalculatePct(pet->GetTotalAuraModValue(UNIT_MOD_ATTACK_POWER) - aurEff->GetAmount() + amount, glyph->GetAmount());
                     }
@@ -796,7 +796,7 @@ class spell_warl_siphon_life : public AuraScript
 
         int32 amount = CalculatePct(static_cast<int32>(eventInfo.GetDamageInfo()->GetDamage()), aurEff->GetAmount());
         // Glyph of Siphon Life
-        if (AuraEffect const* glyph = GetTarget()->GetAuraEffect(SPELL_WARLOCK_GLYPH_OF_SIPHON_LIFE, EFFECT_0))
+        if (AuraEffect const* glyph = GetTarget()->GetAuraEffectOfRankedSpellOrTwin(SPELL_WARLOCK_GLYPH_OF_SIPHON_LIFE, EFFECT_0))
             AddPct(amount, glyph->GetAmount());
 
         GetTarget()->CastCustomSpell(SPELL_WARLOCK_SIPHON_LIFE_HEAL, SPELLVALUE_BASE_POINT0, amount, GetTarget(), true, nullptr, aurEff);
@@ -1267,6 +1267,33 @@ class spell_warl_drain_soul : public AuraScript
     }
 };
 
+// -1101120 - Reborn Drain Soul: its ranks reverse the stock chain's effect order (channel death item at
+// EFFECT_0, periodic damage at EFFECT_1), so the per-tick Soul Shard chance needs its own registration.
+class spell_warl_drain_soul_reborn : public AuraScript
+{
+    PrepareAuraScript(spell_warl_drain_soul_reborn);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WARLOCK_CREATE_SOULSHARD });
+    }
+
+    void HandleTick(AuraEffect const* aurEff)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+
+        if (caster && caster->IsPlayer() && caster->ToPlayer()->isHonorOrXPTarget(target))
+            if (roll_chance_i(20))
+                caster->CastSpell(caster, SPELL_WARLOCK_CREATE_SOULSHARD, aurEff);
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_drain_soul_reborn::HandleTick, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE);
+    }
+};
+
 // 29341 - Shadowburn
 class spell_warl_shadowburn : public AuraScript
 {
@@ -1302,7 +1329,7 @@ class spell_warl_voidwalker_pet_passive : public AuraScript
         if (Unit* pet = GetUnitOwner())
             if (pet->IsPet())
                 if (Unit* owner = pet->ToPet()->GetOwner())
-                    if (AuraEffect* aurEff = owner->GetAuraEffect(SPELL_WARLOCK_GLYPH_OF_VOIDWALKER, EFFECT_0))
+                    if (AuraEffect* aurEff = owner->GetAuraEffectOfRankedSpellOrTwin(SPELL_WARLOCK_GLYPH_OF_VOIDWALKER, EFFECT_0))
                         amount += aurEff->GetAmount();
     }
 
@@ -1841,6 +1868,7 @@ void AddSC_warlock_spell_scripts()
     RegisterSpellScript(spell_warl_soulshatter);
     RegisterSpellScript(spell_warl_unstable_affliction);
     RegisterSpellScript(spell_warl_drain_soul);
+    RegisterSpellScript(spell_warl_drain_soul_reborn);
     RegisterSpellScript(spell_warl_shadowburn);
     RegisterSpellScript(spell_warl_voidwalker_pet_passive);
     RegisterSpellScript(spell_warl_curse_of_agony);

@@ -880,7 +880,7 @@ std::array<SpellEffectInfo::StaticData, TOTAL_SPELL_EFFECTS> SpellEffectInfo::_d
     {EFFECT_IMPLICIT_TARGET_NONE,     TARGET_OBJECT_TYPE_NONE}, // 194 unknown Ascension effect
     {EFFECT_IMPLICIT_TARGET_EXPLICIT, TARGET_OBJECT_TYPE_UNIT}, // 195 SPELL_EFFECT_ASCENSION_RESET_COOLDOWN
     {EFFECT_IMPLICIT_TARGET_NONE,     TARGET_OBJECT_TYPE_NONE}, // 196 unknown Ascension effect
-    {EFFECT_IMPLICIT_TARGET_NONE,     TARGET_OBJECT_TYPE_NONE}, // 197 unknown Ascension effect
+    {EFFECT_IMPLICIT_TARGET_EXPLICIT, TARGET_OBJECT_TYPE_UNIT}, // 197 SPELL_EFFECT_ASCENSION_MODIFY_FAMILY_COOLDOWN
     {EFFECT_IMPLICIT_TARGET_NONE,     TARGET_OBJECT_TYPE_NONE}, // 198 unknown Ascension effect
 } };
 
@@ -1424,6 +1424,16 @@ bool SpellInfo::IsBreakingStealth() const
     return !(AttributesEx & SPELL_ATTR1_ALLOW_WHILE_STEALTHED);
 }
 
+int32 SpellInfo::GetComboPointPowerBonus(Unit* caster, uint8 effIndex, uint32 comboPoints) const
+{
+    if (!caster || !HasComboPointPowerBonus(effIndex))
+        return 0;
+
+    float const power = caster->GetTotalAttackPowerValue(BASE_ATTACK) + caster->SpellBaseDamageBonusDone(GetSchoolMask());
+    float const cp = float(comboPoints);
+    return int32(power * (ComboPointPowerSquare[effIndex] * cp * cp + ComboPointPowerFlat[effIndex]));
+}
+
 bool SpellInfo::IsRangedWeaponSpell() const
 {
     return (SpellFamilyName == SPELLFAMILY_HUNTER && !(SpellFamilyFlags[1] & 0x10000000)) // for 53352, cannot find better way
@@ -1486,6 +1496,32 @@ namespace
         }();
         return targets;
     }
+
+    // DmgClass is an ability-roll category (melee/ranged/magic/none), not "does this deal damage" --
+    // a pure heal like Greater Heal is still SPELL_DAMAGE_CLASS_MAGIC. Flame Throwing's tooltip names
+    // damaging spells specifically, so look for an actual damage-dealing effect instead.
+    bool DealsDamage(SpellInfo const* info)
+    {
+        for (SpellEffectInfo const& effect : info->GetEffects())
+        {
+            switch (effect.Effect)
+            {
+                case SPELL_EFFECT_SCHOOL_DAMAGE:
+                case SPELL_EFFECT_WEAPON_DAMAGE:
+                case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+                case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+                case SPELL_EFFECT_HEALTH_LEECH:
+                    return true;
+                default:
+                    break;
+            }
+            if (effect.ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE ||
+                effect.ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT ||
+                effect.ApplyAuraName == SPELL_AURA_PERIODIC_LEECH)
+                return true;
+        }
+        return false;
+    }
 }
 
 bool SpellInfo::IsAffectedBySpellMods() const
@@ -1527,6 +1563,12 @@ bool SpellInfo::IsAffectedBySpellMod(SpellModifier const* mod) const
 
     if (mod->targetSpellId && mod->targetSpellId != Id)
         return false;
+
+    // Flame Throwing has no SpellAffect.dbc row and a zero class mask, so the generic lookup below
+    // would match nothing for its range modifier; its tooltip names every damaging spell of its
+    // owner, not one spell family. Its other (undocumented) modifier effect is left alone.
+    if ((mod->spellId == 11100 || mod->spellId == 12353) && mod->op == SPELLMOD_RANGE)
+        return DealsDamage(this);
 
     if (SpellFamilyName == 31 && affectSpell->SpellFamilyName == 31)
     {

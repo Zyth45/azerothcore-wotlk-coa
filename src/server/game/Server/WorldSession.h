@@ -700,8 +700,9 @@ public:
     void ClearRecruitAFriendRequests();
     void UpdateRecruitAFriendRewards(bool force = false);
     bool HandleRecruitAFriendRewardsCommand(std::string const& command);
-    void RecoverRecruitAFriendRewards();
-    void DeliverRecruitAFriendRewards(PreparedQueryResult rows);
+    void UpdateRecruitMilestoneRewards();
+    void RecoverRecruitAFriendRewards(bool recruit = false);
+    void DeliverRecruitAFriendRewards(PreparedQueryResult rows, bool recruit);
 
     // Packets cooldown
     time_t GetCalendarEventCreationCooldown() const { return _calendarEventCreationCooldown; }

@@ -464,6 +464,7 @@ public: /* PlayerScript */
     void OnPlayerApplyAmmoBonuses(Player* player, ItemTemplate const* proto, float& currentAmmoDPS);
     void OnPlayerGetAmmoDisplay(Player* player, SpellInfo const* spellInfo, uint32& displayId, uint32& inventoryType);
     void OnPlayerGetShapeshiftModel(Player* player, uint8 form, uint32 spellId, uint32& modelId);
+    void OnPlayerGetNameQueryRace(Player* player, uint8& race);
     bool OnPlayerCanEquipItem(Player* player, uint8 slot, uint16& dest, Item* pItem, bool swap, bool not_loading);
     bool OnPlayerCanUnequipItem(Player* player, uint16 pos, bool swap);
     bool OnPlayerCanUseItem(Player* player, ItemTemplate const* proto, InventoryResult& result);
@@ -615,6 +616,7 @@ public: /* UnitScript */
     void OnPeriodicDamageResult(Unit* target, Unit* attacker, uint32 damage, SpellInfo const* spellInfo);
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo);
     void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage);
+    void ModifyMeleeDamageRange(Unit* target, Unit* attacker, float& minDamage, float& maxDamage);
     void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo);
     void ModifySpellEffectBaseValue(Unit const* caster, SpellInfo const* spellInfo,
         uint8 effectIndex, float& value);
@@ -726,6 +728,7 @@ public: /* SpellSC */
     void OnSpellSuccessfulSteal(Spell* spell, Unit* target, uint32 count);
     void OnSpellSuccessfulDispel(Spell* spell, Unit* target, SpellEffIndex effect, uint32 count);
     void OnSpellCritChance(Spell* spell, Unit* target, float& chance);
+    void OnGuardianSummoned(Spell* spell, TempSummon* summon);
 
 public: /* GameEventScript */
     void OnGameEventStart(uint16 EventID);

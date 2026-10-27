@@ -1346,7 +1346,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                 if (GetSpellInfo()->SpellFamilyFlags[0] & 0x00000001 && GetSpellInfo()->SpellFamilyFlags[2] & 0x00000008)
                 {
                     // Glyph of Fireball
-                    if (caster->HasAura(56368))
+                    if (caster->HasAuraOrTwin(56368))
                         SetDuration(0);
                 }
                 else if (GetSpellInfo()->SpellFamilyFlags[0] & 0x00000020 && GetSpellInfo()->SpellVisual[0] == 13)
@@ -1450,7 +1450,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                 else if (m_spellInfo->SpellFamilyFlags[0] & 0x1 && m_spellInfo->SpellFamilyFlags[2] & 0x400 && GetEffect(0))
                 {
                     // Glyph of Power Word: Shield
-                    if (AuraEffect* glyph = caster->GetAuraEffect(55672, 0))
+                    if (AuraEffect* glyph = caster->GetAuraEffectOfRankedSpellOrTwin(55672, 0))
                     {
                         // instantly heal m_amount% of the absorb-value
                         int32 heal = glyph->GetAmount() * GetEffect(0)->GetAmount() / 100;
@@ -1750,7 +1750,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
 
                         Player* player = caster->ToPlayer();
                         // Glyph of Guardian Spirit
-                        if (AuraEffect* aurEff = player->GetAuraEffect(63231, 0))
+                        if (AuraEffect* aurEff = player->GetAuraEffectOfRankedSpellOrTwin(63231, 0))
                         {
                             if (!player->HasSpellCooldown(47788))
                                 break;
@@ -1821,7 +1821,7 @@ void Aura::HandleAuraSpecificMods(AuraApplication const* aurApp, Unit* caster, b
                 break;
             case SPELLFAMILY_HUNTER:
                 // Glyph of Freezing Trap
-                if ((GetSpellInfo()->SpellFamilyFlags[0] & 0x00000008) && caster && caster->HasAura(56845))
+                if ((GetSpellInfo()->SpellFamilyFlags[0] & 0x00000008) && caster && caster->HasAuraOrTwin(56845))
                 {
                     target->CastSpell(target, 61394, true);
                 }
@@ -2958,13 +2958,14 @@ void DynObjAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* /*caster*/
         SpellInfo const* spellInfo = GetSpellInfo();
         SpellEffectInfo const& effect = spellInfo->Effects[effIndex];
         UnitList targetList;
-        // CoA: Eldritch Obelisk (560322), Harvesting Grounds (707591), and Deathwind's Spirit Realm
-        // trigger (effect 1, 582526) encode their ally selectors in EffectImplicitTargetA with TargetB unset.
+        // CoA: Eldritch Obelisk (560322), Harvesting Grounds (707591), Shadra's Lair (804978, effect 2) and
+        // Deathwind's Spirit Realm trigger (effect 1, 582526) encode their ally selectors in EffectImplicitTargetA
+        // with TargetB unset.
         // Other spells also use this selector, so keep the exception scoped to these effects.
         bool const deathwindRank = spellInfo->Id == 800174 || (spellInfo->Id >= 502989 && spellInfo->Id <= 503000);
         bool const deathwindSpiritRealm = deathwindRank && effIndex == 1 && effect.TriggerSpell == 582526;
-        bool const coaTargetAAlly = (spellInfo->Id == 560322 || spellInfo->Id == 707591 || deathwindSpiritRealm) &&
-            effect.TargetA.GetTarget() == TARGET_UNIT_DEST_AREA_ALLY;
+        bool const coaTargetAAlly = (spellInfo->Id == 560322 || spellInfo->Id == 707591 || spellInfo->Id == 804978 ||
+            deathwindSpiritRealm) && effect.TargetA.GetTarget() == TARGET_UNIT_DEST_AREA_ALLY;
         bool const targetBAlly = effect.TargetB.GetTarget() == TARGET_DEST_DYNOBJ_ALLY ||
             effect.TargetB.GetTarget() == TARGET_UNIT_DEST_AREA_ALLY;
         if (targetBAlly || coaTargetAAlly)
