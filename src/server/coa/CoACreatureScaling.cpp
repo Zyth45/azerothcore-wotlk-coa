@@ -153,11 +153,6 @@ float CreatureScaling::SpellDamageMultiplier(Unit const* target, Unit const* att
     return ::SpellDamageMultiplier(target, attacker, spell);
 }
 
-float CreatureScaling::DamageMultiplier(Unit const* target, Unit const* attacker)
-{
-    return ::DamageMultiplier(target, attacker);
-}
-
 CreatureScaling::TestOverride::TestOverride()
 {
     auto settings = std::make_shared<CreatureScaling::Settings>();

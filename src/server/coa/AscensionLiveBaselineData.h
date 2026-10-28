@@ -804,7 +804,7 @@ struct Proficiency
     std::uint32_t SpellId;
 };
 
-inline constexpr std::array<Proficiency, 242> Proficiencies =
+inline constexpr std::array<Proficiency, 243> Proficiencies =
 {{
     {12, 44, 196},
     {12, 172, 197},
