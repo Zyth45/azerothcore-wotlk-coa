@@ -4678,7 +4678,28 @@ void Unit::_UpdateAutoRepeatSpell()
     // Check for ranged attack timer
     if (isAttackReady(RANGED_ATTACK))
     {
-        SpellCastResult result = m_currentSpells[CURRENT_AUTOREPEAT_SPELL]->CheckCast(true);
+        // Refresh the cached target before checking the cast. The auto-repeat spell keeps its
+        // target pointer between shots; if the target left the world (despawn, logout, teleport)
+        // the pointer is stale and CheckCast's scripts crash reading it.
+        Spell* autoRepeat = m_currentSpells[CURRENT_AUTOREPEAT_SPELL];
+        if (!autoRepeat->UpdatePointers())
+        {
+            InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
+            m_AutoRepeatFirstCast = true;
+            return;
+        }
+        if (autoRepeat->m_targets.GetUnitTargetGUID())
+        {
+            Unit* repeatTarget = autoRepeat->m_targets.GetUnitTarget();
+            if (!repeatTarget || !repeatTarget->IsInWorld())
+            {
+                InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
+                m_AutoRepeatFirstCast = true;
+                return;
+            }
+        }
+
+        SpellCastResult result = autoRepeat->CheckCast(true);
         if (result != SPELL_CAST_OK)
         {
             if (spellProto->Id != HUNTER_AUTOSHOOT)
