@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -598,6 +599,7 @@ namespace
     // Rebuilt markers follow every quest packet the client processes, so the override
     // is re-applied on the update after one of those, not on a timer.
     std::unordered_set<uint32> g_apexIconDirty;
+    std::mutex g_apexIconLock;
 
     class SkinpeelerIconTriggerScript : public ServerScript
     {
@@ -619,7 +621,10 @@ namespace
                 case SMSG_QUEST_QUERY_RESPONSE:
                 case SMSG_QUESTUPDATE_COMPLETE:
                     if (session && session->GetPlayer())
+                    {
+                        std::lock_guard<std::mutex> lock(g_apexIconLock);
                         g_apexIconDirty.insert(session->GetPlayer()->GetGUID().GetCounter());
+                    }
                     break;
                 default:
                     break;
@@ -639,22 +644,24 @@ namespace
                 return;
 
             uint32 const guid = player->GetGUID().GetCounter();
-            bool const dirty = g_apexIconDirty.count(guid) != 0;
+            bool dirty = false;
+            {
+                std::lock_guard<std::mutex> lock(g_apexIconLock);
+                dirty = g_apexIconDirty.count(guid) != 0;
 
-            uint32& timer = _timers[guid];
-            timer += p_time;
+                uint32& timer = _timers[guid];
+                timer += p_time;
 
-            // A quest packet was just sent, so the client has already rebuilt with the
-            // native model. Run now instead of waiting for the next second.
-            if (!dirty && timer < 1000)
-                return;
+                // A quest packet was just sent, so the client has already rebuilt with the
+                // native model. Run now instead of waiting for the next second.
+                if (!dirty && timer < 1000)
+                    return;
 
-            timer = 0;
+                timer = 0;
+            }
 
             for (ApexIconNpc const& npc : APEX_ICON_NPCS)
             {
-                uint32& sent = _lastState[player->GetGUID().GetCounter() * 8 + npc.Entry % 8];
-                uint32& seen = _lastSeen[player->GetGUID().GetCounter() * 8 + npc.Entry % 8];
                 QuestStatus const status = player->GetQuestStatus(npc.QuestId);
                 uint32 state = APEX_ICON_NONE;
 
@@ -671,16 +678,24 @@ namespace
                 // when the quest state changes or the NPC comes back into view. Sending it
                 // on a timer would fight the client's own rebuild.
                 Creature* creature = player->FindNearestCreature(npc.Entry, 200.0f, true);
-                if (!creature)
-                {
-                    seen = 0;
-                    continue;
-                }
 
-                bool const firstSight = (seen == 0);
-                bool const dirty = g_apexIconDirty.count(player->GetGUID().GetCounter()) != 0;
-                if (!firstSight && !dirty && sent == state)
-                    continue;
+                {
+                    std::lock_guard<std::mutex> lock(g_apexIconLock);
+                    uint32& sent = _lastState[guid * 8 + npc.Entry % 8];
+                    uint32& seen = _lastSeen[guid * 8 + npc.Entry % 8];
+                    if (!creature)
+                    {
+                        seen = 0;
+                        continue;
+                    }
+
+                    bool const firstSight = (seen == 0);
+                    if (!firstSight && !dirty && sent == state)
+                        continue;
+
+                    sent = state;
+                    seen = 1;
+                }
 
                 WorldPacket packet(SMSG_UPDATE_QUEST_ICON, 16);
                 packet << creature->GetGUID() << APEX_ICON_KIND << state;
@@ -688,12 +703,10 @@ namespace
 
                 LOG_INFO("coa", "APEX ICON: {} -> kind {} state {}", player->GetName(),
                     APEX_ICON_KIND, state);
-
-                sent = state;
-                seen = 1;
             }
 
-            g_apexIconDirty.erase(player->GetGUID().GetCounter());
+            std::lock_guard<std::mutex> lock(g_apexIconLock);
+            g_apexIconDirty.erase(guid);
 
         }
 
