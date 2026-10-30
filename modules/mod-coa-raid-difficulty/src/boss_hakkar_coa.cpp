@@ -155,6 +155,9 @@ namespace
             _heartDamage = 0;
             _pools.clear();
             _clock.Reset();
+            // The blood pools are his dynamic objects (cast by World Triggers in his
+            // name) and outlive a wipe by up to 5 minutes otherwise.
+            me->RemoveAllDynObjects();
         }
 
         void JustEngagedWith(Unit* /*who*/) override
@@ -192,6 +195,7 @@ namespace
         {
             ClearWill();
             BossAI::JustDied(killer);
+            me->RemoveAllDynObjects();
         }
 
         // Where a Son of Hakkar dies, his blood pools.
