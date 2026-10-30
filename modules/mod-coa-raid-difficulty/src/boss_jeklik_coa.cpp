@@ -113,6 +113,10 @@ namespace
     };
     Position const SpawnBatRider = { -12301.689f, -1371.2921f, 145.09244f, 0.0f };
     Position const JeklikCaveHomePosition = { -12291.9f, -1380.08f, 144.902f, 2.28638f };
+    Position const JeklikLandingPosition = { -12273.9f, -1407.77f, 132.223f, 2.28638f };
+    // The intro flight sometimes never starts (she stays perched, passive, in
+    // combat): past this she lands at the end of the path anyway.
+    constexpr uint32 JEKLIK_INTRO_FALLBACK_MS = 20000;
 
     struct boss_jeklik_coa : public BossAI
     {
@@ -136,6 +140,8 @@ namespace
         void JustEngagedWith(Unit* who) override
         {
             BossAI::JustEngagedWith(who);
+            _introMs = 0;
+            _landed = false;
             Talk(SAY_AGGRO);
             DoZoneInCombat();
             me->RemoveAurasDueToSpell(SPELL_GREEN_CHANNELING);
@@ -147,6 +153,9 @@ namespace
         void PathEndReached(uint32 pathId) override
         {
             BossAI::PathEndReached(pathId);
+            if (_landed)
+                return;
+            _landed = true;
             me->RemoveAurasDueToSpell(SPELL_BAT_FORM);
             me->SetDisableGravity(false);
             me->SetCombatMovement(true);
@@ -259,6 +268,17 @@ namespace
             if (!UpdateVictim())
                 return;
 
+            if (!_landed)
+            {
+                _introMs += diff;
+                if (_introMs < JEKLIK_INTRO_FALLBACK_MS)
+                    return;
+                me->GetMotionMaster()->Clear();
+                me->NearTeleportTo(JeklikLandingPosition.GetPositionX(), JeklikLandingPosition.GetPositionY(),
+                                   JeklikLandingPosition.GetPositionZ(), JeklikLandingPosition.GetOrientation());
+                PathEndReached(PATH_JEKLIK_INTRO);
+            }
+
             events.Update(diff);
 
             if (me->HasUnitState(UNIT_STATE_CASTING))
@@ -327,6 +347,8 @@ namespace
 
     private:
         bool _bat = false;
+        bool _landed = false;
+        uint32 _introMs = 0;
         uint8 _riders = 0;
         ObjectGuid _target;
     };
