@@ -120,6 +120,11 @@ namespace
         {
             BossAI::Reset();
             me->RemoveAllAuras();
+            // His Acid Pools (a week long) and Toxic Clouds are his own dynamic
+            // objects, not the trigger's (Spell::EffectPersistentAA hands a World
+            // Trigger's ground effect to the original caster), and a unit only drops
+            // them when it leaves the world: after a wipe they stay on the floor.
+            me->RemoveAllDynObjects();
             _snake = false;
             _frenzied = false;
             _burst.clear();
@@ -142,6 +147,9 @@ namespace
             BossAI::JustDied(killer);
             Talk(SAY_DEATH);
             me->RemoveAllAuras();
+            // ...and after the kill, for as long as his corpse stays: the raid rested
+            // in them and died over and over (ZG, tr-20261030-183848-75).
+            me->RemoveAllDynObjects();
         }
 
         void DamageTaken(Unit* attacker, uint32& damage, DamageEffectType type, SpellSchoolMask school) override
