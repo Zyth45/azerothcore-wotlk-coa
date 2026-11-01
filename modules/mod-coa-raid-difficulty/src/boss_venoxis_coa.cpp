@@ -3,16 +3,21 @@
  *
  * Kit: Ascension's block 2118000-2118087. Timings: a Bronzebeard kill on video
  * (Ascension's mechanics, read off his cast bar at 10 frames a second), see
- * raid-difficulty-werkzeug/zg-video-zeitplan.json.
+ * raid-difficulty-werkzeug/zg-video-zeitplan.json. Holy Nova, Renew and Fierce Blow
+ * repeat as in the CoA combat log of 2026-08-02.
  *
  *   Troll form
- *     Holy Nova     first 7s,  every 18s   15 yards around him; heals him and
+ *     Holy Nova     first 7s,  every 17s   15 yards around him; heals him and
  *                                          his cobras for 6% of his health
- *     Renew         first 16s, every 24s   on himself, 2% of his health every 3s
+ *     Renew         first 16s, every 28s   on himself, 2% of his health every 3s
  *     Holy Wrath    first 18s, every 15s   on the tank, arcs on
  *     Holy Fire     first 22s, every 10s   random player, hit and burn
  *
- *   Snake form, at 50% (the video: 47-50%)
+ *   At 50% (the video: 47-50%) he drains the Avatar of Hethiss (see LoaAvatar),
+ *   taking ~1% damage while it dies; then the Gift of the Blood God and his
+ *   snake form.
+ *
+ *   Snake form, when the avatar dies
  *     Toxic Bombardement  first 1s,  every 15s   toxic cloud at a random player
  *     Parasitic Poison    first 3s,  every 15s   random player; dispelled, a
  *                                                Parasitic Serpent breaks out
@@ -21,6 +26,9 @@
  *     Corpse Explosion    first 17s, every 40s   every snake corpse nearby
  *                                                bursts and leaves acid
  *     Poisonous Fangs     passive, his hits apply Virulent Poison
+ *
+ *   Both forms
+ *     Fierce Blow   tank, first 6.7-17.3s, then every 6-10s
  *
  * Decided here, not in the data:
  *   - Holy Wrath jumps up to 4 times, 10 yards each, +50% per jump minus 2%
@@ -66,7 +74,9 @@ namespace
         INFO_HOLY_WRATH            = 2118016,
         SPELL_HOLY_WRATH           = 2118020,
         SPELL_HOLY_WRATH_HIT       = 2118021,
+        SPELL_DRAIN_POWER          = 2118022,
         SPELL_ASPECT_OF_HETHISS    = 2118023,
+        SPELL_GIFT_OF_THE_BLOOD_GOD = 2118024,
         SPELL_POISONOUS_FANGS      = 2118025,
         SPELL_VIRULENT_POISON      = 2118026,
         SPELL_VENOM_SPIT           = 2118030,
@@ -83,7 +93,8 @@ namespace
     {
         NPC_RAZZASHI_COBRA    = 11373,
         NPC_PARASITIC_SERPENT = 14884,
-        NPC_WORLD_TRIGGER     = 12999
+        NPC_WORLD_TRIGGER     = 12999,
+        NPC_AVATAR_OF_HETHISS = 666991
     };
 
     enum Events
@@ -97,6 +108,7 @@ namespace
         EVENT_PARASITIC_POISON,
         EVENT_VENOM_SPIT,
         EVENT_CORPSE_EXPLOSION,
+        EVENT_FIERCE_BLOW,
     };
 
     enum Phases
@@ -125,6 +137,7 @@ namespace
             // Trigger's ground effect to the original caster), and a unit only drops
             // them when it leaves the world: after a wipe they stay on the floor.
             me->RemoveAllDynObjects();
+            _avatar.Restore(me);
             _snake = false;
             _frenzied = false;
             _burst.clear();
@@ -133,6 +146,7 @@ namespace
         void JustEngagedWith(Unit* who) override
         {
             BossAI::JustEngagedWith(who);
+            _avatar.Restore(me);
 
             events.SetPhase(PHASE_TROLL);
             events.ScheduleEvent(EVENT_THRASH, 8s);
@@ -140,12 +154,14 @@ namespace
             events.ScheduleEvent(EVENT_RENEW, 16s, 0, PHASE_TROLL);
             events.ScheduleEvent(EVENT_HOLY_WRATH, 18s, 0, PHASE_TROLL);
             events.ScheduleEvent(EVENT_HOLY_FIRE, 22s, 0, PHASE_TROLL);
+            events.ScheduleEvent(EVENT_FIERCE_BLOW, FIERCE_BLOW_FIRST_MIN, FIERCE_BLOW_FIRST_MAX);
         }
 
         void JustDied(Unit* killer) override
         {
             BossAI::JustDied(killer);
             Talk(SAY_DEATH);
+            _avatar.Release(me);
             me->RemoveAllAuras();
             // ...and after the kill, for as long as his corpse stays: the raid rested
             // in them and died over and over (ZG, tr-20261030-183848-75).
@@ -159,17 +175,8 @@ namespace
             if (!_snake && me->HealthBelowPctDamaged(50, damage))
             {
                 _snake = true;
-                me->InterruptNonMeleeSpells(false);
-                DoCastSelf(SPELL_ASPECT_OF_HETHISS, true);
-                DoCastSelf(SPELL_POISONOUS_FANGS, true);
-                Talk(SAY_TRANSFORM);
-                DoResetThreatList();
-
-                events.SetPhase(PHASE_SNAKE);
-                events.ScheduleEvent(EVENT_TOXIC_BOMBARDEMENT, 1s, 0, PHASE_SNAKE);
-                events.ScheduleEvent(EVENT_PARASITIC_POISON, 3s, 0, PHASE_SNAKE);
-                events.ScheduleEvent(EVENT_VENOM_SPIT, 5s, 0, PHASE_SNAKE);
-                events.ScheduleEvent(EVENT_CORPSE_EXPLOSION, 17s, 0, PHASE_SNAKE);
+                if (!_avatar.Drain(me))
+                    TakeSnakeForm();
             }
 
             if (!_frenzied && me->HealthBelowPctDamaged(20, damage))
@@ -177,6 +184,22 @@ namespace
                 _frenzied = true;
                 DoCastSelf(SPELL_FRENZY, true);
             }
+        }
+
+        void TakeSnakeForm()
+        {
+            me->InterruptNonMeleeSpells(false);
+            DoCastSelf(SPELL_GIFT_OF_THE_BLOOD_GOD, true);
+            DoCastSelf(SPELL_ASPECT_OF_HETHISS, true);
+            DoCastSelf(SPELL_POISONOUS_FANGS, true);
+            Talk(SAY_TRANSFORM);
+            DoResetThreatList();
+
+            events.SetPhase(PHASE_SNAKE);
+            events.ScheduleEvent(EVENT_TOXIC_BOMBARDEMENT, 1s, 0, PHASE_SNAKE);
+            events.ScheduleEvent(EVENT_PARASITIC_POISON, 3s, 0, PHASE_SNAKE);
+            events.ScheduleEvent(EVENT_VENOM_SPIT, 5s, 0, PHASE_SNAKE);
+            events.ScheduleEvent(EVENT_CORPSE_EXPLOSION, 17s, 0, PHASE_SNAKE);
         }
 
         // The casts are dummies; what they do happens when they finish.
@@ -292,6 +315,9 @@ namespace
             if (!UpdateVictim())
                 return;
 
+            if (_avatar.Consumed(me))
+                TakeSnakeForm();
+
             events.Update(diff);
 
             if (me->HasUnitState(UNIT_STATE_CASTING))
@@ -307,13 +333,13 @@ namespace
                         break;
                     case EVENT_HOLY_NOVA:
                         DoCastSelf(SPELL_HOLY_NOVA);
-                        events.ScheduleEvent(EVENT_HOLY_NOVA, 18s, 0, PHASE_TROLL);
+                        events.ScheduleEvent(EVENT_HOLY_NOVA, 17s, 0, PHASE_TROLL);
                         break;
                     case EVENT_RENEW:
                     {
                         int32 heal = int32(me->CountPctFromMaxHealth(2));
                         me->CastCustomSpell(me, SPELL_RENEW, &heal, nullptr, nullptr, false);
-                        events.ScheduleEvent(EVENT_RENEW, 24s, 0, PHASE_TROLL);
+                        events.ScheduleEvent(EVENT_RENEW, 28s, 0, PHASE_TROLL);
                         break;
                     }
                     case EVENT_HOLY_WRATH:
@@ -357,6 +383,7 @@ namespace
     private:
         bool _snake = false;
         bool _frenzied = false;
+        LoaAvatar _avatar{ NPC_AVATAR_OF_HETHISS, SPELL_DRAIN_POWER };
         ObjectGuid _target;
         GuidSet _burst;
     };

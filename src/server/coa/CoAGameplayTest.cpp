@@ -394,7 +394,8 @@ bool IsPlacementMetric(std::string const& metric)
 {
     return metric == "spawn_placement" || metric == "spawn_ground_gap" || metric == "spawn_submerged"
         || metric == "spawn_display_state" || metric == "spawn_stand_state" || metric == "spawn_clearance"
-        || metric == "spawn_headroom" || metric == "point_placement" || metric == "point_ground_gap";
+        || metric == "spawn_headroom" || metric == "spawn_distance" || metric == "point_placement"
+        || metric == "point_ground_gap";
 }
 
 double MeasurePlacement(std::string const& metric, Tree const& step)
@@ -408,6 +409,13 @@ double MeasurePlacement(std::string const& metric, Tree const& step)
         std::optional<float> const gap = CoAGameplay::GroundGap(sample);
         Require(gap.has_value(), "No ground found for the point");
         return *gap;
+    }
+
+    if (metric == "spawn_distance")
+    {
+        SpawnData const& spawn = FindSpawn(step);
+        return std::hypot(spawn.posX - step.get<float>("x"), spawn.posY - step.get<float>("y"),
+            spawn.posZ - step.get<float>("z"));
     }
 
     if (metric == "spawn_clearance" || metric == "spawn_headroom")
@@ -885,6 +893,7 @@ struct Actor
     std::vector<SpellEnergizeEvent> spellEnergizes;
     Tree castFailures;
     std::map<uint32, uint8> castFailureReason;
+    std::map<uint32, uint32> spellCooldownPacketMs;
     uint32 bankShows = 0;
     uint32 systemMessages = 0;
     uint32 monsterChats = 0;
@@ -1213,6 +1222,20 @@ void ObservePacket(Actor& actor, WorldPacket const& packet)
         failure.put("reason", uint32(reason));
         actor.castFailures.push_back({"", failure});
         actor.castFailureReason[spell] = reason;
+    }
+    if (packet.GetOpcode() == SMSG_SPELL_COOLDOWN && packet.size() >= 8 + 1 + 4 + 4)
+    {
+        WorldPacket response(packet);
+        ObjectGuid unit;
+        uint8 flags;
+        response >> unit >> flags;
+        while (response.rpos() < response.size())
+        {
+            uint32 spell, cooldown;
+            response >> spell >> cooldown;
+            if (unit == actor.guid)
+                actor.spellCooldownPacketMs[spell] = cooldown;
+        }
     }
 
     if (packet.GetOpcode() == SMSG_MESSAGECHAT)
@@ -4058,6 +4081,12 @@ private:
                 Require(creature != nullptr, "Spell damage observation needs a present owned creature");
                 caster = creature->GetGUID();
             }
+            if (auto id = step.get_optional<std::string>("caster"))
+            {
+                Require(!step.get_optional<bool>("pet") && !step.get_optional<uint32>("entry"),
+                    "Spell damage query selects one of pet, entry or caster");
+                caster = GetUnit(*id)->GetGUID();
+            }
             ObjectGuid target;
             if (auto id = step.get_optional<std::string>("target"))
                 target = GetUnit(*id)->GetGUID();
@@ -4176,8 +4205,11 @@ private:
             }
             if (metric == "script_melee_damage_dealt")
             {
+                Unit* dealer = step.get<bool>("pet", false) ? static_cast<Unit*>(player->GetPet())
+                    : static_cast<Unit*>(player);
+                Require(dealer != nullptr, "Scripted melee damage dealt needs a present pet");
                 uint32 damage = 1000;
-                sScriptMgr->ModifyMeleeDamage(attacker, player, damage);
+                sScriptMgr->ModifyMeleeDamage(attacker, dealer, damage);
                 return damage;
             }
             if (metric == "script_melee_damage_taken")
@@ -4632,6 +4664,12 @@ private:
             auto const& reasons = _actors.at(step.get<std::string>("actor")).castFailureReason;
             auto const found = reasons.find(spell);
             return found == reasons.end() ? 0.0 : double(found->second);
+        }
+        if (metric == "spell_cooldown_packet_ms")
+        {
+            auto const& packets = _actors.at(step.get<std::string>("actor")).spellCooldownPacketMs;
+            auto const found = packets.find(spell);
+            return found == packets.end() ? -1.0 : double(found->second);
         }
         if (metric == "pet_autocast_enabled")
         {
@@ -6601,6 +6639,11 @@ private:
                     aura = recipient->AddAura(spell, recipient);
                 Require(aura != nullptr, "Could not apply fixture aura");
                 aura->SetStackAmount(uint8(stacks));
+                if (aura->GetMaxDuration() == 0)
+                {
+                    aura->SetMaxDuration(60000);
+                    aura->SetDuration(60000);
+                }
             }
         }
         else if (action == "money")
@@ -6961,6 +7004,19 @@ private:
                 player->GetSession()->HandleSetDungeonDifficultyOpcode(request);
             }
         }
+        else if (action == "raid_difficulty_packet")
+        {
+            uint32 const difficulty = step.get<uint32>("value");
+            Require(difficulty < MAX_RAID_DIFFICULTY, "Invalid raid difficulty");
+            WorldPacket packet(MSG_SET_RAID_DIFFICULTY, 4);
+            packet << difficulty;
+            if (sScriptMgr->CanPacketReceive(player->GetSession(), packet))
+            {
+                WorldPackets::Instance::SetRaidDifficultyClient request(std::move(packet));
+                request.Read();
+                player->GetSession()->HandleSetRaidDifficultyOpcode(request);
+            }
+        }
         else if (action == "teleport")
         {
             uint32 map = step.get<uint32>("map");
@@ -6969,7 +7025,7 @@ private:
             float z = step.get<float>("z");
             float o = step.get<float>("o", 0.0f);
             Require(sMapStore.LookupEntry(map) != nullptr, "Unknown map to teleport to");
-            player->TeleportTo(map, x, y, z, o);
+            player->TeleportTo(map, x, y, z, o, step.get<bool>("ignore_access", false) ? TELE_TO_GM_MODE : 0);
             record.put("result", "teleport sent");
         }
         else if (action == "teleport_to_spawn")
