@@ -6,4 +6,4 @@ UPDATE `manastorm_hub_return` r
 JOIN `gameobject` g ON g.`guid` = 6901700 AND g.`id` = 20832
 SET r.`gameobject_guid` = 6901700
 WHERE r.`team_id` = 1
-  AND NOT EXISTS (SELECT 1 FROM (SELECT `guid` FROM `gameobject` WHERE `guid` = r.`gameobject_guid` AND `id` = 20832) AS p);
+  AND NOT EXISTS (SELECT 1 FROM `gameobject` p WHERE p.`guid` = r.`gameobject_guid` AND p.`id` = 20832);
