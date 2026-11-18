@@ -1141,3 +1141,6 @@ XPHotspots.Brand = ""
 #        Reloadable:  yes (.reload config)
 
 CoA.DayNightSpeed = 1
+
+CoA.ChatLog.Enable = 0
+CoA.ChatLog.KeepDays = 30
